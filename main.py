@@ -1,18 +1,17 @@
 import logging
 import os
-from utils.mod_manager import ModManager
-from utils.file_manager import FileManager
+
 from utils.debug import setup_logger
+from utils.mod_manager import ModManager
 from utils.settings_manager import Paths
-from utils.lslib import LSLib
 
 
 def main():
     setup_logger("DEBUG")
+    logging.info(Paths.DIVINE_FILE)
     mod_manager = ModManager()
     patch = mod_manager.create_patch()
-    if (patch):
-        os.startfile(Paths.MOD_LIST_DIR)
+    input("Press Enter to continue...")
 
 
 if __name__ == '__main__':

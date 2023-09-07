@@ -1,2 +1,5 @@
 temp/
 output/
+logs/
+main/
+dist/
