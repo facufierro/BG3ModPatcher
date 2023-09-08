@@ -101,7 +101,7 @@ class ModManager:
         return patch_data
 
     @staticmethod
-    def create_patch_folder(patch_data):
+    def create_patch_folder(patch_data: Mod):
         try:
             logging.info("Creating patch files...")
 
@@ -117,13 +117,11 @@ class ModManager:
             logging.error(f"An error occurred while creating patch: {e}")
 
     @staticmethod
-    def pack_patch(patch_data: Mod, installation_path=Paths.GAME_DATA_DIR):
+    def pack_patch(patch_data: Mod):
         try:
             logging.info("Packing patch...")
             source_path = os.path.join(Paths.TEMP_DIR, patch_data.folder)
-            logging.debug(f"Source path: {source_path}")
-            dest_path = os.path.join(installation_path, patch_data.folder + ".pak")
-            logging.debug(f"Destination path: {dest_path}")
+            dest_path = os.path.join(Paths.MOD_LIST_DIR, patch_data.folder + ".pak")
             LSLib.execute_command("create-package", source_path, dest_path)
             logging.info("Patch packed successfully")
         except Exception as e:
@@ -133,11 +131,9 @@ class ModManager:
     def install_patch(patch: Mod):
         try:
             logging.info("Installing patch...")
-
             modsettings_file = FileManager.find_files(Paths.GAME_DATA_DIR, ["modsettings.lsx"])
             FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "Module", patch.module_string())
             FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "ModuleShortDesc", patch.module_short_desc_string())
-
             logging.info("Patch installed successfully")
             return True
         except Exception as e:
@@ -145,59 +141,70 @@ class ModManager:
 
     @staticmethod
     def merge_progressions(existing_progression, new_progression):
-        existing_subclass_uuids = [s.uuid for s in existing_progression.subclasses]
-        new_subclasses = [s for s in new_progression.subclasses if s.uuid not in existing_subclass_uuids]
-        existing_progression.subclasses.extend(new_subclasses)
+        try:
+            existing_subclass_uuids = [s.uuid for s in existing_progression.subclasses]
+            new_subclasses = [s for s in new_progression.subclasses if s.uuid not in existing_subclass_uuids]
+            existing_progression.subclasses.extend(new_subclasses)
 
-        for attr in ['boosts', 'passives_added', 'passives_removed', 'selectors', 'allow_improvement', 'is_multiclass']:
-            existing_attr = getattr(existing_progression, attr, None)
-            new_attr = getattr(new_progression, attr, None)
-            setattr(existing_progression, attr, ModManager.merge_attributes(existing_attr, new_attr))
+            for attr in ['boosts', 'passives_added', 'passives_removed', 'selectors', 'allow_improvement', 'is_multiclass']:
+                existing_attr = getattr(existing_progression, attr, None)
+                new_attr = getattr(new_progression, attr, None)
+                setattr(existing_progression, attr, ModManager.merge_attributes(existing_attr, new_attr))
+        except Exception as e:
+            logging.error(f"An error occurred while merging progressions: {e}")
 
     @staticmethod
-    def merge_attributes(existing, new):
-        if existing is None or new is None:
-            return existing or new
+    def merge_attributes(existing_progression: Progression, new_progression: Progression):
+        try:
+            if existing_progression is None or new_progression is None:
+                return existing_progression or new_progression
 
-        if isinstance(existing, str) and isinstance(new, str):
-            return ';'.join(set(existing.split(';')).union(set(new.split(';'))))
-        elif isinstance(existing, list) and isinstance(new, list):
-            return list(set(existing).union(set(new)))
-        else:
-            # logging.warning(f"Unsupported attribute types. Existing type: {type(existing)}, New type: {type(new)}.")
-            return existing
+            if isinstance(existing_progression, str) and isinstance(new_progression, str):
+                return ';'.join(set(existing_progression.split(';')).union(set(new_progression.split(';'))))
+            elif isinstance(existing_progression, list) and isinstance(new_progression, list):
+                return list(set(existing_progression).union(set(new_progression)))
+            else:
+                return existing_progression
+        except Exception as e:
+            logging.error(f"An error occurred while merging attributes: {e}")
 
     @staticmethod
     def remove_value_duplicates(progression: Progression):
-        attributes = ["boosts", "passives_added", "passives_removed", "selectors"]
-        for attribute in attributes:
-            attr_value = getattr(progression, attribute, None)
-            if attr_value is not None:
-                unique_values = list(set(attr_value))
-                setattr(progression, attribute, unique_values)
+        try:
+            attributes = ["boosts", "passives_added", "passives_removed", "selectors"]
+            for attribute in attributes:
+                attr_value = getattr(progression, attribute, None)
+                if attr_value is not None:
+                    unique_values = list(set(attr_value))
+                    setattr(progression, attribute, unique_values)
+        except Exception as e:
+            logging.error(f"An error occurred while removing value duplicates: {e}")
 
     @staticmethod
     def remove_duplicate_spellslots(progression: Progression):
-        if progression.boosts is None:
-            return
+        try:
+            if progression.boosts is None:
+                return
 
-        highest_level_for_slot = {}
+            highest_level_for_slot = {}
 
-        for boost in progression.boosts:
-            if "ActionResource(SpellSlot," in boost:
-                parts = boost.split(",")
-                level = int(parts[1])
-                slots = int(parts[2].replace(")", ""))
+            for boost in progression.boosts:
+                if "ActionResource(SpellSlot," in boost:
+                    parts = boost.split(",")
+                    level = int(parts[1])
+                    slots = int(parts[2].replace(")", ""))
 
-                if level > highest_level_for_slot.get(slots, 0):
-                    highest_level_for_slot[slots] = level
+                    if level > highest_level_for_slot.get(slots, 0):
+                        highest_level_for_slot[slots] = level
 
-        new_boosts = [boost for boost in progression.boosts if "ActionResource(SpellSlot," not in boost]
+            new_boosts = [boost for boost in progression.boosts if "ActionResource(SpellSlot," not in boost]
 
-        for slots, level in highest_level_for_slot.items():
-            new_boosts.append(f"ActionResource(SpellSlot,{level},{slots})")
+            for slots, level in highest_level_for_slot.items():
+                new_boosts.append(f"ActionResource(SpellSlot,{level},{slots})")
 
-        progression.boosts = new_boosts
+            progression.boosts = new_boosts
+        except Exception as e:
+            logging.error(f"An error occurred while removing duplicate spellslots: {e}")
 
     @staticmethod
     def clean_up():

@@ -7,8 +7,8 @@ from utils.settings_manager import Paths
 
 class LSLib:
     @staticmethod
-    def execute_command(command: Literal["create-package", "extract-package", "convert-resource", "convert-loca"], source_path: str, destination_path: str) -> bool:
-
+    def execute_command(command: Literal["create-package", "extract-package", "convert-resource", "convert-loca"],
+                        source_path: str, destination_path: str) -> None:
         try:
             str = [
                 Paths.DIVINE_FILE,
@@ -24,10 +24,6 @@ class LSLib:
                 "off",
             ]
             subprocess.run(str, check=True)
-            return True
         except Exception as e:
             logging.error(
                 f"An error occurred while executing the lslib command. Reason: {e}")
-            input("Press Enter to continue...")
-            # sys.exit(1)
-            return False
