@@ -25,6 +25,13 @@ def setup_logger(log_level=Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICA
     log_dir = "logs"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
+
+        # Clear the logs on start
+    with open("logs/debug.log", "w"):
+        pass  # Clearing the debug log
+    with open("logs/application.log", "w"):
+        pass  # Clearing the application log
+
     logger = logging.getLogger()
     logger.setLevel(log_level)
 

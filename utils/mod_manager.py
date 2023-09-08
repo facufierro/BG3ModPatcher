@@ -1,10 +1,12 @@
 
 import os
 import logging
+from typing import List
 from model.mod import Mod
 from utils.file_manager import FileManager
 from utils.settings_manager import Paths
 from utils.lslib import LSLib
+from model.progression import Progression
 
 
 class ModManager:
@@ -36,100 +38,71 @@ class ModManager:
                 LSLib.execute_command("extract-package", source_path, dest_path)
                 unpacked_mods.append(dest_path)
             logging.info("Mods unpacked successfully")
+            for mod in unpacked_mods:
+                logging.debug(f"Unpacked mod: {mod}")
             return unpacked_mods
         except Exception as e:
             logging.error(f"An error occurred while unpacking mods: {e}")
 
     @staticmethod
-    def select_progression_mods():
+    def select_progression_mods(unpacked_mods):
         try:
             mods = []
-            mod_folders = ModManager.unpack_mods()
             logging.info("Selecting patch compatible mods...")
-            # logging.debug(f"{len(mod_folders)} mod folders found")
-            for mod_folder in mod_folders:
-                meta_file = FileManager.find_files(mod_folder, ['meta.lsx'])
-                progression_file = FileManager.find_files(mod_folder, ['Progressions.lsx'])
-                class_descriptions_file = FileManager.find_files(mod_folder, ['ClassDescriptions.lsx'])
-                if (progression_file):
+            logging.warn("Only mods with a meta.lsx and Progressions.lsx file will be selected. Other mods are not supported by this tool.")
+            for unpacked_mod in unpacked_mods:
+                meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
+                progression_file = FileManager.find_files(unpacked_mod, ['Progressions.lsx'])
 
-                    if (class_descriptions_file):
-                        mods.append(Mod(meta_file['meta.lsx'], progression_file['Progressions.lsx'], class_descriptions_file['ClassDescriptions.lsx']))
-                    else:
-                        mods.append(Mod(meta_file['meta.lsx'], progression_file['Progressions.lsx']))
+                if meta_file:
+
+                    meta_string = FileManager.xml_to_string(meta_file['meta.lsx'])
+                    meta_string = meta_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+
+                    if progression_file:
+                        progression_string = FileManager.xml_to_string(progression_file['Progressions.lsx'])
+                        # logging.debug(f"Progression string: {progression_string}")
+                        progression_string = progression_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+                        mods.append(Mod(meta_string, progression_string))
+
             logging.info(f"{len(mods)} mods selected for patching:")
             for mod in mods:
                 logging.info(f"--{mod.name}")
+
             return mods
+
         except Exception as e:
             logging.error(f"An error occurred while selecting patch compatible mods: {e}")
 
     @staticmethod
-    def combine_mods():
+    def combine_mods(mods: List[Mod]):
         try:
-            mods = ModManager.select_progression_mods()
             logging.info("Combining mods...")
-            patch = Mod()
+            patch_data = Mod()
+            mod: Mod
             for mod in mods:
                 for progression in mod.progressions:
-                    existing_progression = next((p for p in patch.progressions if p.uuid == progression.uuid), None)
-                    if existing_progression:
-                        # Merge subclasses if progression already exists
-                        existing_subclass_uuids = {s['UUID'] for s in existing_progression.subclasses}
-                        new_subclasses = [s for s in progression.subclasses if s['UUID'] not in existing_subclass_uuids]
-                        existing_progression.subclasses.extend(new_subclasses)
-                        # Merge all attributes
-                        for attr in ['boosts', 'passives_added', 'passives_removed' 'selectors', 'allow_improvement', 'is_multiclass']:
-                            existing_attr_value = getattr(existing_progression, attr, None)
-                            new_attr_value = getattr(progression, attr, None)
+                    if progression not in patch_data.progressions:
+                        patch_data.progressions.append(progression)
 
-                            if existing_attr_value in [None, ""] or new_attr_value in [None, ""]:
-                                continue  # Skip merging for this attribute
-                            existing_attr_values = set(existing_attr_value.split(';'))
-                            new_attr_values = set(new_attr_value.split(';'))
-                            merged_attr_values = existing_attr_values.union(new_attr_values)
-                            setattr(existing_progression, attr, ';'.join(merged_attr_values))
-                    else:
-                        # Add progression if it doesn't exist
-                        patch.progressions.append(progression)
-            logging.info("Mods combined successfully")
-            return patch
+            FileManager.write_file("D:\Projects\Mods\Baldurs Gate 3\BG3ModPatcher\Progressions.lsx", patch_data.progressions_string(), 'w')
+            return patch_data
         except Exception as e:
             logging.error(f"An error occurred while combining mods: {e}")
 
     @staticmethod
-    def remove_action_resources_duplicates(patch):
+    def create_patch_folder(patch_data):
         try:
-            logging.info("Checking for duplicate action resources...")
+            logging.info("Creating patch files...")
 
-            progression = patch.progressions[0]
-            # if progression.boosts has "ActionResource"
-            if "ActionResource" in progression.boosts:
-                # remove "ActionResource" from progression.boosts
-                progression.boosts = progression.boosts.replace("ActionResource;", "")
-                # add "ActionResource" to progression.passives_added
-                progression.passives_added = progression.passives_added + "ActionResource;"
-            logging.debug(f"{progression.boosts}")
-            # logging.info("Duplicate boosts removed successfully")
-            return True
-        except Exception as e:
-            logging.error(f"An error occurred while checking for duplicate boosts: {e}")
-
-    @staticmethod
-    def create_patch():
-        try:
-            logging.info("Creating patch...")
-            patch = ModManager.combine_mods()
-            meta_file_path = os.path.join(Paths.TEMP_DIR, patch.folder, "Mods", patch.folder, "meta.lsx")
-            progressions_file_path = os.path.join(Paths.TEMP_DIR, patch.folder, "Public", patch.folder, "Progressions", "Progressions.lsx")
+            meta_file_path = os.path.join(Paths.TEMP_DIR, patch_data.folder, "Mods", patch_data.folder, "meta.lsx")
+            progressions_file_path = os.path.join(Paths.TEMP_DIR, patch_data.folder, "Public", patch_data.folder, "Progressions", "Progressions.lsx")
             FileManager.create_file(meta_file_path)
             FileManager.create_file(progressions_file_path)
-            FileManager.write_file(meta_file_path, patch.meta_string())
-            FileManager.write_file(progressions_file_path, patch.progressions_string())
-            logging.info("Patch created successfully")
-            ModManager.remove_action_resources_duplicates(patch)
-
-            return patch, True
+            FileManager.write_file(meta_file_path, patch_data.meta_string())
+            FileManager.write_file(progressions_file_path, patch_data.progressions_string())
+            logging.info("Patch files created successfully")
+            return True
         except Exception as e:
             logging.error(f"An error occurred while creating patch: {e}")
 

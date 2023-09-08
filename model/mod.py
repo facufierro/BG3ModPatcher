@@ -1,84 +1,64 @@
-# model/mod.py
 import logging
+from lxml import etree
+from typing import List, Dict, Optional
 from model.progression import Progression
-from utils.file_manager import FileManager
 
 
 class Mod:
-    def __init__(self, meta_lsx_file_path=None, progressions_lsx_file_path=None, class_descriptions_path=None):
-        self.uuid = "c0d54727-cce1-4da4-b5b7-180590fb2780"
-        self.name = "FFTSubclassPatch"
-        self.author = "fierrof"
-        self.folder = "FFTSubclassPatch"
-        self.description = "A compatibility patch for subclasses in Baldur's Gate 3."
-        self.progressions = []
-        self.class_descriptions_path = None
-        self.version = "36028797018963968"
+    def __init__(self, meta_xml_string: str = None, progressions_xml_string: str = None):
+        try:
+            self.progressions: Optional[List[Progression]] = None
 
-        if meta_lsx_file_path and progressions_lsx_file_path:
-            self.meta_lsx_file_path = meta_lsx_file_path
-            self.progressions_lsx_file_path = progressions_lsx_file_path
-            if class_descriptions_path is not None:
-                self.class_descriptions_path = class_descriptions_path
-            self.load_meta()
-            self.load_progressions()
-            # logging.debug(f"{self.meta_string()}")
+            # Parsing Meta XML
+            try:
+                if meta_xml_string is not None:
+                    meta_root = etree.fromstring(meta_xml_string)
 
-    def load_meta(self):
-        mod_data = FileManager.load_nodes(self.meta_lsx_file_path, 'ModuleInfo', ['UUID', 'Name', 'Author', 'Folder', 'Description'])
-        self.uuid = mod_data[0].get('UUID', self.uuid)
-        self.name = mod_data[0].get('Name', self.name)
-        self.author = mod_data[0].get('Author', self.author)
-        self.folder = mod_data[0].get('Folder', self.folder)
-        self.description = mod_data[0].get('Description', self.description)
+                    module_info = meta_root.xpath(".//node[@id='ModuleInfo']")[0]
 
-    def load_progressions(self):
+                    self.author = module_info.xpath(".//attribute[@id='Author']/@value")[0]
+                    self.description = module_info.xpath(".//attribute[@id='Description']/@value")[0]
+                    self.folder = module_info.xpath(".//attribute[@id='Folder']/@value")[0]
+                    self.name = module_info.xpath(".//attribute[@id='Name']/@value")[0]
+                    self.uuid = module_info.xpath(".//attribute[@id='UUID']/@value")[0]
+                else:
+                    # Default values for meta
+                    self.author = "fierrof"
+                    self.description = "A compatibility patch for Baldur's Gate 3 mods."
+                    self.folder = "FFTSubclassPatch"
+                    self.name = "FFTSubclassPatch"
+                    self.uuid = "c0d54727-cce1-4da4-b5b7-180590fb2780"
+                    self.progressions = []
+            except Exception as e:
+                logging.error(f"An error occurred while parsing meta.lsx: {e}")
+            # Parsing Progressions XML
+            try:
+                if progressions_xml_string is not None:
+                    self.progressions = []
+                    prog_root = etree.fromstring(progressions_xml_string)
+                    progression_nodes = prog_root.xpath(".//node[@id='Progression']")
+                    for node in progression_nodes:
+                        xml_string_progression = etree.tostring(node).decode()
+                        progression = Progression.load_progression_from_xml(xml_string_progression)
+                        self.progressions.append(progression)
+                    logging.debug(f"Added Progression with selectors: {progression.selectors}")
 
-        def subclass_handler(node, node_data):
-            subclasses = []
-            for child_node in node.xpath(".//node[@id='SubClass']"):
-                uuid = FileManager.get_attribute(child_node, 'Object')
-                subclasses.append({'Name': 'Base Game Subclass', 'UUID': uuid})
-            node_data['SubClasses'] = subclasses
+            except Exception as e:
+                logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
+        except Exception as e:
+            logging.error(f"An error occurred while creating a Mod: {e}")
 
-        progressions_data = FileManager.load_nodes(
-            self.progressions_lsx_file_path,
-            "Progression",
-            ["UUID", "Name", "TableUUID", "Level", "ProgressionType", "Boosts", "PassivesAdded", "PassivesRemoved", "Selectors", "AllowImprovement", "IsMulticlass"],
-            child_handler=subclass_handler
+    def __str__(self):
+        str_rep = (
+            f"Mod Info:\n"
+            f"Author: {self.author}\n"
+            f"Description: {self.description}\n"
+            f"Folder: {self.folder}\n"
+            f"Name: {self.name}\n"
+            f"UUID: {self.uuid}\n"
+            f"Number of Progressions: {len(self.progressions)}"
         )
-        class_description_dict = {}  # Initialize to an empty dictionary
-
-        if self.class_descriptions_path is not None:
-            class_descriptions = FileManager.load_nodes(self.class_descriptions_path, 'ClassDescription', ['UUID', 'Name'])
-            class_description_dict = {desc['UUID']: desc['Name'] for desc in class_descriptions}
-
-        self.progressions = []  # Clear existing progressions if any
-
-        for progression_data in progressions_data:
-            subclasses = progression_data.get('SubClasses', [])
-            if subclasses:
-                for subclass in subclasses:
-                    if subclass['UUID'] in class_description_dict:
-                        subclass['Name'] = class_description_dict[subclass['UUID']]
-
-            progression = Progression(
-                uuid=progression_data.get("UUID"),
-                name=progression_data.get("Name"),
-                table_uuid=progression_data.get("TableUUID"),
-                level=progression_data.get("Level"),
-                progression_type=progression_data.get("ProgressionType"),
-                boosts=progression_data.get("Boosts"),
-                passives_added=progression_data.get("PassivesAdded"),
-                passives_removed=progression_data.get("PassivesRemoved"),
-                selectors=progression_data.get("Selectors"),
-                allow_improvement=progression_data.get("AllowImprovement"),
-                is_multiclass=progression_data.get("IsMulticlass"),
-                subclasses=subclasses
-            )
-
-            # logging.debug(f"Progressions data: {progressions_data}")
-            self.progressions.append(progression)
+        return str_rep
 
     def meta_string(self) -> str:
         return (
@@ -155,7 +135,7 @@ class Mod:
             '<attribute id="MD5" value="" type="LSString" />\n'
             f'<attribute id="Name" value="{self.folder}" type="LSString" />\n'
             f'<attribute id="UUID" value="{self.uuid}" type="FixedString" />\n'
-            '<attribute id="Version64" value="36028797018963968" type="int64" />\n'
+            f'<attribute id="Version64" value="36028797018963968" type="int64" />\n'
             '</node>\n'
         )
         return str

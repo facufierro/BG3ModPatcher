@@ -5,7 +5,7 @@ import json
 import subprocess
 import enum
 from lxml import etree
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Literal
 from utils.settings_manager import Paths
 from utils.enums import FileType
 from utils.lslib import LSLib
@@ -13,6 +13,18 @@ from utils.lslib import LSLib
 
 class FileManager:
 
+    # Creates a directory if it doesn't exist
+    @staticmethod
+    def create_folder(path):
+        if not os.path.exists(path):
+            try:
+                os.makedirs(path)
+                logging.debug(f"Created directory {path}")
+            except Exception as e:
+                logging.error(f"Failed to create directory {path}: {e}")
+                return False
+
+    # Deletes all files and folders in the specified folder
     @staticmethod
     def clean_folder(folder_path):
         try:
@@ -30,6 +42,7 @@ class FileManager:
         except Exception as e:
             logging.error(f'Failed to clean folder. Reason: {e}')
 
+    # Searches for files with the specified names in the specified folder
     @staticmethod
     def find_files(folder_path, target_filenames: List[str]):
         found_files = {}
@@ -45,16 +58,7 @@ class FileManager:
 
         return found_files
 
-    @staticmethod
-    def create_folder(path):
-        if not os.path.exists(path):
-            try:
-                os.makedirs(path)
-                logging.debug(f"Created directory {path}")
-            except Exception as e:
-                logging.error(f"Failed to create directory {path}: {e}")
-                return False
-
+    # Creates a file if it doesn't exist
     @staticmethod
     def create_file(path):
         directory = os.path.dirname(path)
@@ -69,8 +73,9 @@ class FileManager:
             logging.error(f"Failed to create file {path}: {e}")
             return False
 
+    # Writes content to a file
     @staticmethod
-    def write_file(path, content, mode='w', insert_at=None):
+    def write_file(path: str, content: str, mode=Literal['a', 'w'], insert_at: str = None):
         try:
             if mode == 'a' and insert_at is not None:
                 with open(path, 'r+') as f:
@@ -87,6 +92,7 @@ class FileManager:
             logging.error(f"Failed to write to file {path} in {mode} mode: {e}")
             return False
 
+    # Saves an object instance to a JSON file
     @staticmethod
     def save_object_to_json(obj, path):
         try:
@@ -99,6 +105,7 @@ class FileManager:
         except Exception as e:
             logging.error(f"Failed to save object instance to {path}: {e}")
 
+    # Loads an object instance from a JSON file
     @staticmethod
     def load_object_from_json(obj, path):
         try:
@@ -113,8 +120,9 @@ class FileManager:
             logging.error(f"Failed to decode JSON from {path}")
             return {}
 
+    # Writes the specified data to a mod file
     @staticmethod
-    def generate_mod_file_data(file_type: FileType, obj_list: List[Any], base_string_top=None, base_string_bottom=None):
+    def write_mod_file_data(file_type: FileType, obj_list: List[Any], base_string_top=None, base_string_bottom=None):
         obj_string_list = []
         file_contents = ""
 
@@ -132,61 +140,14 @@ class FileManager:
 
         FileManager.write_file(file_type.value, file_contents, 'w')
 
+    # Generates a mod file containing the specified data
     @staticmethod
     def generate_mod_file(file_type: FileType, obj_list: List[Any], base_string_top=None, base_string_bottom=None):
         FileManager.clean_folder(file_type.value)
         FileManager.create_file(file_type.value)
         FileManager.generate_mod_file_data(file_type, obj_list, base_string_top, base_string_bottom)
 
-    @staticmethod
-    def get_attribute(node, attr_id, default=None) -> Optional[str]:
-        try:
-            # Extract the value of the attribute specified by attr_id
-            result = node.xpath(f"./attribute[@id='{attr_id}']/@value")
-        except Exception as e:
-            logging.error(f"Error in get_attribute: {e}")
-            return default
-        return result[0] if result else default
-
-    @staticmethod
-    def parse_lsx(path):
-        if not os.path.exists(path):
-            logging.error(f"File not found: {path}")
-            return None
-        try:
-            # Initialize parser and parse the XML
-            parser = etree.XMLParser(remove_blank_text=True)
-            tree = etree.parse(path, parser)
-            root = tree.getroot()
-            # Log successful parsing
-            return root
-        except Exception as e:
-            logging.error(f"Error in parse_lsx: {e}")
-            return None
-
-    @staticmethod
-    def load_nodes(path, node_name, attribute_list, child_handler=None):
-        try:
-            root = FileManager.parse_lsx(path)
-            if root is None:
-                logging.error("Failed to parse LSX file")
-                return []
-
-            nodes_data = []
-            for node in root.xpath(f".//node[@id='{node_name}']"):
-                node_data = {attr: FileManager.get_attribute(node, attr) for attr in attribute_list}
-
-                if child_handler:
-                    child_handler(node, node_data)
-
-                nodes_data.append(node_data)
-
-            return nodes_data if nodes_data else []
-
-        except Exception as e:
-            logging.error(f"An error occurred in load_from_lsx: {e}")
-            return []
-
+    # Inserts the specified data after the last node with the specified id in the specified XML file
     @staticmethod
     def insert_after_last_node(xml_file_path, node_id, string_to_insert):
         # Parse the XML file
@@ -222,3 +183,12 @@ class FileManager:
 
         # Save the modified XML back to the file
         tree.write(xml_file_path, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+    # Converts an XML file to a string
+    @staticmethod
+    def xml_to_string(xml_file_path):
+        with open(xml_file_path, 'r', encoding='utf-8') as file:
+            # remove first line
+            # file.readline()
+            meta_string = file.read()
+        return meta_string
