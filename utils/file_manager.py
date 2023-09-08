@@ -75,7 +75,7 @@ class FileManager:
 
     # Writes content to a file
     @staticmethod
-    def write_file(path: str, content: str, mode=Literal['a', 'w'], insert_at: str = None):
+    def write_file(path: str, content: str, mode: Literal['a', 'w'] = 'w', insert_at: int = None):
         try:
             if mode == 'a' and insert_at is not None:
                 with open(path, 'r+') as f:

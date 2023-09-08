@@ -1,6 +1,8 @@
 
 import os
 import logging
+import re
+from collections import defaultdict
 from typing import List
 from model.mod import Mod
 from utils.file_manager import FileManager
@@ -76,19 +78,27 @@ class ModManager:
 
     @staticmethod
     def combine_mods(mods: List[Mod]):
-        try:
-            logging.info("Combining mods...")
-            patch_data = Mod()
-            mod: Mod
-            for mod in mods:
-                for progression in mod.progressions:
-                    if progression not in patch_data.progressions:
-                        patch_data.progressions.append(progression)
+        patch_data = Mod()
+        for mod in mods:
+            if mod.progressions is None:
+                logging.warning(f"No progressions in mod: {mod.name}")
+                continue
 
-            FileManager.write_file("D:\Projects\Mods\Baldurs Gate 3\BG3ModPatcher\Progressions.lsx", patch_data.progressions_string(), 'w')
-            return patch_data
-        except Exception as e:
-            logging.error(f"An error occurred while combining mods: {e}")
+            for new_progression in mod.progressions:
+                existing_progression = next((p for p in patch_data.progressions if p.uuid == new_progression.uuid), None)
+                if existing_progression:
+                    ModManager.merge_progressions(existing_progression, new_progression)
+                else:
+                    patch_data.progressions.append(new_progression)
+
+            for patch_progression in patch_data.progressions:
+                ModManager.remove_value_duplicates(patch_progression)
+                ModManager.remove_duplicate_spellslots(patch_progression)
+
+        # logging.debug(type(patch_data))
+        # logging.debug(f"Attributes of patch_data: {vars(patch_data)}")
+
+        return patch_data
 
     @staticmethod
     def create_patch_folder(patch_data):
@@ -107,25 +117,23 @@ class ModManager:
             logging.error(f"An error occurred while creating patch: {e}")
 
     @staticmethod
-    def pack_patch(patch):
+    def pack_patch(patch_data: Mod, installation_path=Paths.GAME_DATA_DIR):
         try:
             logging.info("Packing patch...")
-            source_path = os.path.join(Paths.TEMP_DIR, patch.folder)
-            dest_path = os.path.join(Paths.OUTPUT_DIR, patch.folder + ".pak")
+            source_path = os.path.join(Paths.TEMP_DIR, patch_data.folder)
+            logging.debug(f"Source path: {source_path}")
+            dest_path = os.path.join(installation_path, patch_data.folder + ".pak")
+            logging.debug(f"Destination path: {dest_path}")
             LSLib.execute_command("create-package", source_path, dest_path)
             logging.info("Patch packed successfully")
-            logging.info("Cleaning up temporary files...")
-            ModManager.install_patch(patch)
-            FileManager.clean_folder(Paths.TEMP_DIR)
-            logging.info("Temporary files cleaned up successfully")
-            return dest_path
         except Exception as e:
             logging.error(f"An error occurred while packing patch: {e}")
 
     @staticmethod
-    def install_patch(patch):
+    def install_patch(patch: Mod):
         try:
             logging.info("Installing patch...")
+
             modsettings_file = FileManager.find_files(Paths.GAME_DATA_DIR, ["modsettings.lsx"])
             FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "Module", patch.module_string())
             FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "ModuleShortDesc", patch.module_short_desc_string())
@@ -134,3 +142,68 @@ class ModManager:
             return True
         except Exception as e:
             logging.error(f"An error occurred while installing patch: {e}")
+
+    @staticmethod
+    def merge_progressions(existing_progression, new_progression):
+        existing_subclass_uuids = [s.uuid for s in existing_progression.subclasses]
+        new_subclasses = [s for s in new_progression.subclasses if s.uuid not in existing_subclass_uuids]
+        existing_progression.subclasses.extend(new_subclasses)
+
+        for attr in ['boosts', 'passives_added', 'passives_removed', 'selectors', 'allow_improvement', 'is_multiclass']:
+            existing_attr = getattr(existing_progression, attr, None)
+            new_attr = getattr(new_progression, attr, None)
+            setattr(existing_progression, attr, ModManager.merge_attributes(existing_attr, new_attr))
+
+    @staticmethod
+    def merge_attributes(existing, new):
+        if existing is None or new is None:
+            return existing or new
+
+        if isinstance(existing, str) and isinstance(new, str):
+            return ';'.join(set(existing.split(';')).union(set(new.split(';'))))
+        elif isinstance(existing, list) and isinstance(new, list):
+            return list(set(existing).union(set(new)))
+        else:
+            # logging.warning(f"Unsupported attribute types. Existing type: {type(existing)}, New type: {type(new)}.")
+            return existing
+
+    @staticmethod
+    def remove_value_duplicates(progression: Progression):
+        attributes = ["boosts", "passives_added", "passives_removed", "selectors"]
+        for attribute in attributes:
+            attr_value = getattr(progression, attribute, None)
+            if attr_value is not None:
+                unique_values = list(set(attr_value))
+                setattr(progression, attribute, unique_values)
+
+    @staticmethod
+    def remove_duplicate_spellslots(progression: Progression):
+        if progression.boosts is None:
+            return
+
+        highest_level_for_slot = {}
+
+        for boost in progression.boosts:
+            if "ActionResource(SpellSlot," in boost:
+                parts = boost.split(",")
+                level = int(parts[1])
+                slots = int(parts[2].replace(")", ""))
+
+                if level > highest_level_for_slot.get(slots, 0):
+                    highest_level_for_slot[slots] = level
+
+        new_boosts = [boost for boost in progression.boosts if "ActionResource(SpellSlot," not in boost]
+
+        for slots, level in highest_level_for_slot.items():
+            new_boosts.append(f"ActionResource(SpellSlot,{level},{slots})")
+
+        progression.boosts = new_boosts
+
+    @staticmethod
+    def clean_up():
+        try:
+            logging.info("Cleaning temporary filles...")
+            FileManager.clean_folder(Paths.TEMP_DIR)
+            logging.info("Temporary files cleaned successfully")
+        except Exception as e:
+            logging.error(f"An error occurred while cleaning up: {e}")
