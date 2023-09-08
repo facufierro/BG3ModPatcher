@@ -1,5 +1,6 @@
 import subprocess
 import logging
+import sys
 from typing import Literal
 from utils.settings_manager import Paths
 
@@ -27,4 +28,6 @@ class LSLib:
         except Exception as e:
             logging.error(
                 f"An error occurred while executing the lslib command. Reason: {e}")
+            input("Press Enter to continue...")
+            # sys.exit(1)
             return False

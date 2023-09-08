@@ -8,9 +8,10 @@ from utils.settings_manager import Paths
 
 def main():
     setup_logger("DEBUG")
-    logging.info(Paths.DIVINE_FILE)
+
     mod_manager = ModManager()
     patch = mod_manager.create_patch()
+    # mod_manager.pack_patch(patch)
     input("Press Enter to continue...")
 
 

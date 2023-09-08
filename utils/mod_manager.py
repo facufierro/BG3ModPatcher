@@ -98,6 +98,24 @@ class ModManager:
             logging.error(f"An error occurred while combining mods: {e}")
 
     @staticmethod
+    def remove_action_resources_duplicates(patch):
+        try:
+            logging.info("Checking for duplicate action resources...")
+
+            progression = patch.progressions[0]
+            # if progression.boosts has "ActionResource"
+            if "ActionResource" in progression.boosts:
+                # remove "ActionResource" from progression.boosts
+                progression.boosts = progression.boosts.replace("ActionResource;", "")
+                # add "ActionResource" to progression.passives_added
+                progression.passives_added = progression.passives_added + "ActionResource;"
+            logging.debug(f"{progression.boosts}")
+            # logging.info("Duplicate boosts removed successfully")
+            return True
+        except Exception as e:
+            logging.error(f"An error occurred while checking for duplicate boosts: {e}")
+
+    @staticmethod
     def create_patch():
         try:
             logging.info("Creating patch...")
@@ -109,7 +127,8 @@ class ModManager:
             FileManager.write_file(meta_file_path, patch.meta_string())
             FileManager.write_file(progressions_file_path, patch.progressions_string())
             logging.info("Patch created successfully")
-            ModManager.pack_patch(patch)
+            ModManager.remove_action_resources_duplicates(patch)
+
             return patch, True
         except Exception as e:
             logging.error(f"An error occurred while creating patch: {e}")
@@ -119,12 +138,12 @@ class ModManager:
         try:
             logging.info("Packing patch...")
             source_path = os.path.join(Paths.TEMP_DIR, patch.folder)
-            dest_path = os.path.join(Paths.MOD_LIST_DIR, patch.folder + ".pak")
+            dest_path = os.path.join(Paths.OUTPUT_DIR, patch.folder + ".pak")
             LSLib.execute_command("create-package", source_path, dest_path)
             logging.info("Patch packed successfully")
             logging.info("Cleaning up temporary files...")
             ModManager.install_patch(patch)
-            # FileManager.clean_folder(Paths.TEMP_DIR)
+            FileManager.clean_folder(Paths.TEMP_DIR)
             logging.info("Temporary files cleaned up successfully")
             return dest_path
         except Exception as e:

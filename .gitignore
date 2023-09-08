@@ -1,5 +1,7 @@
 temp/
 output/
 logs/
-main/
 dist/
+build/
+export_tool/
+main.spec

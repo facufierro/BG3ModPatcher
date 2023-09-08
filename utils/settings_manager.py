@@ -8,7 +8,7 @@ class Paths:
     GAME_DATA_DIR = os.path.join(os.getenv("LOCALAPPDATA"), "Larian Studios", "Baldur's Gate 3")
     MOD_LIST_DIR = os.path.join(GAME_DATA_DIR, "Mods")
 
-    ROOT_DIR = os.path.dirname(sys.executable)
+    ROOT_DIR = os.getcwd()
     DIVINE_FILE = os.path.join(ROOT_DIR, "export_tool", "divine.exe")
     SETTINGS_FILE = os.path.join(ROOT_DIR, "settings.json")
     OUTPUT_DIR = os.path.join(ROOT_DIR, "output")

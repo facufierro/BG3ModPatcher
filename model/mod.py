@@ -3,9 +3,6 @@ import logging
 from model.progression import Progression
 from utils.file_manager import FileManager
 
-# Initialize logging
-logging.basicConfig(level=logging.INFO)  # Adjust level as needed
-
 
 class Mod:
     def __init__(self, meta_lsx_file_path=None, progressions_lsx_file_path=None, class_descriptions_path=None):
