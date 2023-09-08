@@ -44,6 +44,8 @@ class Mod:
 
             except Exception as e:
                 logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
+                logging.error(f"There are no Progression in this mod ({self.name}) or they are invalid.")
+                input("Press Enter to continue...")
         except Exception as e:
             logging.error(f"An error occurred while creating a Mod: {e}")
 
