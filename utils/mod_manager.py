@@ -47,7 +47,7 @@ class ModManager:
             logging.error(f"An error occurred while unpacking mods: {e}")
 
     @staticmethod
-    def select_progression_mods(unpacked_mods):
+    def select_progression_mods(unpacked_mods: List[str]):
         try:
             mods = []
             logging.info("Selecting patch compatible mods...")
@@ -128,19 +128,19 @@ class ModManager:
             logging.error(f"An error occurred while packing patch: {e}")
 
     @staticmethod
-    def install_patch(patch: Mod):
+    def install_patch(patch_data: Mod):
         try:
             logging.info("Installing patch...")
             modsettings_file = FileManager.find_files(Paths.GAME_DATA_DIR, ["modsettings.lsx"])
-            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "Module", patch.module_string())
-            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "ModuleShortDesc", patch.module_short_desc_string())
+            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "Module", patch_data.module_string())
+            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "ModuleShortDesc", patch_data.module_short_desc_string())
             logging.info("Patch installed successfully")
             return True
         except Exception as e:
             logging.error(f"An error occurred while installing patch: {e}")
 
     @staticmethod
-    def merge_progressions(existing_progression, new_progression):
+    def merge_progressions(existing_progression: Progression, new_progression: Progression):
         try:
             existing_subclass_uuids = [s.uuid for s in existing_progression.subclasses]
             new_subclasses = [s for s in new_progression.subclasses if s.uuid not in existing_subclass_uuids]

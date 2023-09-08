@@ -16,12 +16,8 @@ def main():
     unpacked_mods = mod_manager.unpack_mods()
     compatible_mods = mod_manager.select_progression_mods(unpacked_mods)
     patch_data = mod_manager.combine_mods(compatible_mods)
-    # FileManager.write_file("D:\Projects\Mods\Baldurs Gate 3\BG3ModPatcher\logs\meta.lsx", patch_data.meta_string())
-    # FileManager.write_file("D:\Projects\Mods\Baldurs Gate 3\BG3ModPatcher\logs\Progressions.lsx", patch_data.progressions_string())
-    # logging.debug(patch_data.folder)
-
     mod_manager.create_patch_folder(patch_data)
-    mod_manager.pack_patch(patch_data, Paths.MOD_LIST_DIR)
+    mod_manager.pack_patch(patch_data)
     mod_manager.install_patch(patch_data)
     # mod_manager.clean_up()
     # input("Press Enter to continue...")

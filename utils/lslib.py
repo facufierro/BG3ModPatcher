@@ -14,14 +14,16 @@ class LSLib:
                 Paths.DIVINE_FILE,
                 "-g",
                 "bg3",
-                "--action",
+                "-a",
                 command,
+                "-c",
+                "lz4",
                 "--source",
                 source_path,
                 "--destination",
                 destination_path,
                 "-l",
-                "off",
+                "all",
             ]
             subprocess.run(str, check=True)
         except Exception as e:
