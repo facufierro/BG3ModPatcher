@@ -1,6 +1,5 @@
 # in paths.py
 import os
-import sys
 
 
 class Paths:

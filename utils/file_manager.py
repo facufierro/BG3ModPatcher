@@ -192,3 +192,23 @@ class FileManager:
             # file.readline()
             meta_string = file.read()
         return meta_string
+
+    @staticmethod
+    def remove_loose_strings_from_xml(file_path):
+        try:
+            parser = etree.XMLParser(remove_blank_text=True)
+            tree = etree.parse(file_path, parser)
+            root = tree.getroot()
+
+            def recurse_remove_text(element):
+                element.text = None
+                element.tail = None
+                for child in element:
+                    recurse_remove_text(child)
+
+            recurse_remove_text(root)
+
+            with open(file_path, 'wb') as f:
+                tree.write(f)
+        except Exception as e:
+            logging.error(f"An error occurred while removing loose strings from {file_path}: {e}")

@@ -1,8 +1,6 @@
 
 import os
 import logging
-import re
-from collections import defaultdict
 from typing import List
 from model.mod import Mod
 from utils.file_manager import FileManager
@@ -50,20 +48,20 @@ class ModManager:
     def select_progression_mods(unpacked_mods: List[str]):
         try:
             mods = []
-            logging.info("Selecting patch compatible mods...")
             logging.warn("Only mods with a meta.lsx and Progressions.lsx file will be selected. Other mods are not supported by this tool.")
+            logging.info("Selecting patch compatible mods...")
+
             for unpacked_mod in unpacked_mods:
+                logging.info(f"Checking mod: {unpacked_mod}")
                 meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
                 progression_file = FileManager.find_files(unpacked_mod, ['Progressions.lsx'])
 
                 if meta_file:
-
                     meta_string = FileManager.xml_to_string(meta_file['meta.lsx'])
                     meta_string = meta_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
 
                     if progression_file:
                         progression_string = FileManager.xml_to_string(progression_file['Progressions.lsx'])
-                        # logging.debug(f"Progression string: {progression_string}")
                         progression_string = progression_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
                         mods.append(Mod(meta_string, progression_string))
 
@@ -80,6 +78,7 @@ class ModManager:
     def combine_mods(mods: List[Mod]):
         patch_data = Mod()
         for mod in mods:
+            logging.info(f"Combining mod: {mod.name}")
             if mod.progressions is None:
                 logging.warning(f"No progressions in mod: {mod.name}")
                 continue
@@ -209,7 +208,7 @@ class ModManager:
     @staticmethod
     def clean_up():
         try:
-            logging.info("Cleaning temporary filles...")
+            logging.info("Cleaning temporary files...")
             FileManager.clean_folder(Paths.TEMP_DIR)
             logging.info("Temporary files cleaned successfully")
         except Exception as e:

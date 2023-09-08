@@ -1,6 +1,6 @@
 import logging
 from lxml import etree
-from typing import List, Dict, Optional
+from typing import List, Optional
 from model.progression import Progression
 
 

@@ -1,6 +1,5 @@
 import subprocess
 import logging
-import sys
 from typing import Literal
 from utils.settings_manager import Paths
 
