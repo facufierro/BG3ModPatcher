@@ -5,17 +5,20 @@ from utils.mod_manager import ModManager
 
 
 def main():
-    setup_logger("INFO")
+    info_level = "DEBUG"
+    setup_logger(info_level)
     logging.info("Starting BG3ModPatcher v1.1.0 by fierrof")
     mod_manager = ModManager()
     unpacked_mods = mod_manager.unpack_mods()
     compatible_mods = mod_manager.select_progression_mods(unpacked_mods)
     patch_data = mod_manager.combine_mods(compatible_mods)
+    mod_manager.combine_icons(unpacked_mods)
     mod_manager.create_patch_folder(patch_data)
     mod_manager.pack_patch(patch_data)
     mod_manager.install_patch(patch_data)
-    mod_manager.clean_up()
-    input("Press Enter to continue...")
+    if info_level == "INFO":
+        mod_manager.clean_up()
+        input("Press Enter to continue...")
 
 
 if __name__ == '__main__':

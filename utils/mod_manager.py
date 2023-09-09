@@ -54,6 +54,9 @@ class ModManager:
             for unpacked_mod in unpacked_mods:
 
                 unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
+                if unpacked_mod_folder == "ImprovedUI Assets":
+                    logging.warn(f"ImprovedUI Assets mod detected. Icons will be patched.")
+                    continue
                 logging.info(f"Analyzing {unpacked_mod_folder} mod...")
                 meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
                 progression_file = FileManager.find_files(unpacked_mod, ['Progressions.lsx'])
@@ -108,6 +111,23 @@ class ModManager:
         # logging.debug(f"Attributes of patch_data: {vars(patch_data)}")
 
         return patch_data
+
+    @staticmethod
+    def combine_icons(mods: List[Mod]):
+        try:
+            logging.info("Combining icons...")
+            class_icons_file = FileManager.find_files(Paths.TEMP_DIR, ["IUI_ClassIcons.xaml"])
+            race_icons_file = FileManager.find_files(Paths.TEMP_DIR, ["IUI_RaceIcons.xaml"])
+
+           
+            # for mod in mods:
+            #     if mod.icons is None:
+            #         continue
+            #     for icon in mod.icons:
+            #         icon_files.append(icon)
+            logging.info(f"Successfully combined icons for {len(mods)} mods ")
+        except Exception as e:
+            logging.error(f"An error occurred while combining icons: {e}")
 
     @staticmethod
     def create_patch_folder(patch_data: Mod):

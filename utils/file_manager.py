@@ -170,7 +170,7 @@ class FileManager:
         if uuid:
             existing_nodes = root.xpath("//node[@id='{}']/attribute[@id='UUID' and @value='{}']".format(node_id, uuid[0]))
             if existing_nodes:
-                logging.debug(f"Element with UUID {uuid[0]} already exists. Skipping...")
+                # logging.debug(f"Element with UUID {uuid[0]} already exists. Skipping...")
                 return
 
         # Get the last node
