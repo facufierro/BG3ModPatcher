@@ -187,11 +187,15 @@ class FileManager:
     # Converts an XML file to a string
     @staticmethod
     def xml_to_string(xml_file_path):
-        with open(xml_file_path, 'r', encoding='utf-8') as file:
-            # remove first line
-            # file.readline()
-            meta_string = file.read()
-        return meta_string
+        try:
+            with open(xml_file_path, 'r', encoding='utf-8') as file:
+                # remove first line
+                # file.readline()
+                meta_string = file.read()
+            return meta_string
+        except Exception as e:
+            logging.error(f"Failed to convert XML file to string: {e}")
+            return None
 
     @staticmethod
     def remove_loose_strings_from_xml(file_path):

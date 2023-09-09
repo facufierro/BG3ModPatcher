@@ -27,6 +27,7 @@ class Progression:
             self.subclasses = subclasses or []
         except Exception as e:
             logging.error(f"An error occurred while creating a Progression: {e}")
+            return None
 
     @staticmethod
     def load_progression_from_xml(xml_string: str) -> 'Progression':
@@ -61,7 +62,7 @@ class Progression:
 
             return Progression(uuid, name, table_uuid, level, allow_improvement, is_multiclass, boosts, passives_added, passives_removed, selectors, subclasses)
         except Exception as e:
-            logging.error(f"An error occurred while loading a Progression from XML: {e}")
+            return None
 
     def __str__(self) -> str:
         try:

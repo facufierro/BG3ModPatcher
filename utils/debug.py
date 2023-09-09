@@ -16,7 +16,10 @@ class ColoredFormatter(logging.Formatter):
         log_color = self.COLORS.get(record.levelname, '37')  # Default to white
 
         if record.levelname == 'INFO' and 'successfully' in record.msg:
-            log_color = '32'  # Green for 'SUCCESS' within 'INFO'
+            log_color = '32'  # Green for 'successfully' within 'INFO'
+
+        if record.levelname == 'INFO' and 'Successfully' in record.msg:
+            log_color = '32'  # Green for 'Successfully' within 'INFO'
 
         return f"\033[1;{log_color}m{super().format(record)}\033[1;m"
 

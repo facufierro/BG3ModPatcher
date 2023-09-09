@@ -39,13 +39,16 @@ class Mod:
                     for node in progression_nodes:
                         xml_string_progression = etree.tostring(node).decode()
                         progression = Progression.load_progression_from_xml(xml_string_progression)
-                        self.progressions.append(progression)
-                    logging.debug(f"Added Progression with selectors: {progression.selectors}")
+                        if progression is None:
+                            # logging.warning(f"Progressions from {self.name} could not be loaded. Skipping mod...")
+                            self.progressions = None
+                            break
+                        else:
+                            self.progressions.append(progression)
 
             except Exception as e:
                 logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
-                logging.error(f"There are no Progression in this mod ({self.name}) or they are invalid.")
-                input("Press Enter to continue...")
+
         except Exception as e:
             logging.error(f"An error occurred while creating a Mod: {e}")
 

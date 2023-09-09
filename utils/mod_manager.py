@@ -48,11 +48,13 @@ class ModManager:
     def select_progression_mods(unpacked_mods: List[str]):
         try:
             mods = []
-            logging.warn("Only mods with a meta.lsx and Progressions.lsx file will be selected. Other mods are not supported by this tool.")
-            logging.info("Selecting patch compatible mods...")
+            logging.warn("Only mods with COMPATIBLE meta.lsx and Progressions.lsx file will be selected. Other mods are not supported by this tool.")
+            # logging.info("Selecting patch compatible mods...")
 
             for unpacked_mod in unpacked_mods:
-                logging.info(f"Checking mod: {unpacked_mod}")
+
+                unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
+                logging.info(f"Analyzing {unpacked_mod_folder} mod...")
                 meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
                 progression_file = FileManager.find_files(unpacked_mod, ['Progressions.lsx'])
 
@@ -62,8 +64,15 @@ class ModManager:
 
                     if progression_file:
                         progression_string = FileManager.xml_to_string(progression_file['Progressions.lsx'])
+                        if progression_string is None:
+                            logging.warning(f"Progressions.lsx file in mod: {unpacked_mod_folder} is not valid. Skipping mod...")
+                            continue
                         progression_string = progression_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                        mods.append(Mod(meta_string, progression_string))
+                        mod = Mod(meta_string, progression_string)
+                        if mod.progressions is None:
+                            continue
+                        mods.append(mod)
+                        # logging.info(f"-- {unpacked_mod_folder} selected for patching.")
 
             logging.info(f"{len(mods)} mods selected for patching:")
             for mod in mods:
@@ -72,13 +81,14 @@ class ModManager:
             return mods
 
         except Exception as e:
-            logging.error(f"An error occurred while selecting patch compatible mods: {e}")
+            # logging.error(f"An error occurred while selecting patch compatible mods: {e}")
+            pass
 
     @staticmethod
     def combine_mods(mods: List[Mod]):
         patch_data = Mod()
         for mod in mods:
-            logging.info(f"Combining mod: {mod.name}")
+            logging.debug(f"Combining mod: {mod.name}")
             if mod.progressions is None:
                 logging.warning(f"No progressions in mod: {mod.name}")
                 continue
@@ -94,7 +104,7 @@ class ModManager:
                 ModManager.remove_value_duplicates(patch_progression)
                 ModManager.remove_duplicate_spellslots(patch_progression)
 
-        # logging.debug(type(patch_data))
+        logging.info(f"Successfully combined {len(mods)} mods into {patch_data.name}")
         # logging.debug(f"Attributes of patch_data: {vars(patch_data)}")
 
         return patch_data
