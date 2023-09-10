@@ -74,11 +74,7 @@ class ModManager:
                             logging.warning(f"Progressions.lsx file in mod: {unpacked_mod_folder} is not valid. Skipping mod...")
                             continue
                         progression_string = progression_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                        if ImprovedUI_Assets:
-
-                            mod = Mod(meta_string, progression_string, unpacked_mod_folder)
-                        else:
-                            mod = Mod(meta_string, progression_string)
+                        mod = Mod(meta_string, progression_string)
                         if mod.progressions is None:
                             continue
                         mods.append(mod)
