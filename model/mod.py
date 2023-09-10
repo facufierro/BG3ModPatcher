@@ -1,14 +1,15 @@
 import logging
 from lxml import etree
-from typing import List, Optional
+from typing import List, Optional, Dict
 from model.progression import Progression
+from utils.file_manager import FileManager
 
 
 class Mod:
     def __init__(self, meta_xml_string: str = None, progressions_xml_string: str = None):
         try:
             self.progressions: Optional[List[Progression]] = None
-
+            self.icons: Optional[Dict[str, str]] = None
             # Parsing Meta XML
             try:
                 if meta_xml_string is not None:
