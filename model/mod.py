@@ -59,6 +59,12 @@ class Mod:
         except Exception as e:
             logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
 
+    def load_icons(self):
+        try:
+            self.icons = FileManager.load_icons(self.folder)
+        except Exception as e:
+            logging.error(f"An error occurred while loading icons: {e}")
+
     def __str__(self):
         str_rep = (
             f"Mod Info:\n"

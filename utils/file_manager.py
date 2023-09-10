@@ -2,13 +2,10 @@ import os
 import shutil
 import logging
 import json
-import subprocess
-import enum
 from lxml import etree
-from typing import List, Optional, Any, Literal
-from utils.settings_manager import Paths
+from typing import List, Dict, Any
+from typing import Literal
 from utils.enums import FileType
-from utils.lslib import LSLib
 
 
 class FileManager:
@@ -58,7 +55,21 @@ class FileManager:
 
         return found_files
 
+    # Searches for folders with the specified names in the specified folder
+    @staticmethod
+    def find_folders(folder_path: str, target_folder_names: List[str]) -> Dict[str, str]:
+        found_folders = {}
+        try:
+            for root, dirs, _ in os.walk(folder_path):
+                for dir_name in dirs:
+                    if dir_name in target_folder_names:
+                        found_folders[dir_name] = os.path.join(root, dir_name)
+        except Exception as e:
+            logging.error(f"An error occurred while searching for target folders: {e}")
+
+        return found_folders
     # Creates a file if it doesn't exist
+
     @staticmethod
     def create_file(path):
         directory = os.path.dirname(path)
@@ -218,5 +229,5 @@ class FileManager:
             logging.error(f"An error occurred while removing loose strings from {file_path}: {e}")
 
     @staticmethod
-    def get_file_names(folder_path):
-        logging.debug(f"Getting file names from {folder_path}")
+    def get_file_names(folder_path: str, extension: str):
+        return [f for f in os.listdir(folder_path) if f.endswith(f".{extension}")]
