@@ -10,6 +10,8 @@ from model.progression import Progression
 
 
 class ModManager:
+    ImprovedUI_Assets = False
+
     @staticmethod
     def get_mod_list():
         lstMods = []
@@ -56,6 +58,7 @@ class ModManager:
                 unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
                 if unpacked_mod_folder == "ImprovedUI Assets":
                     logging.warn(f"ImprovedUI Assets mod detected. Icons will be patched.")
+                    ImprovedUI_Assets = True
                     continue
                 logging.info(f"Analyzing {unpacked_mod_folder} mod...")
                 meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
@@ -71,7 +74,11 @@ class ModManager:
                             logging.warning(f"Progressions.lsx file in mod: {unpacked_mod_folder} is not valid. Skipping mod...")
                             continue
                         progression_string = progression_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                        mod = Mod(meta_string, progression_string)
+                        if ImprovedUI_Assets:
+
+                            mod = Mod(meta_string, progression_string, unpacked_mod_folder)
+                        else:
+                            mod = Mod(meta_string, progression_string)
                         if mod.progressions is None:
                             continue
                         mods.append(mod)
@@ -113,13 +120,24 @@ class ModManager:
         return patch_data
 
     @staticmethod
+    def load_icons(unpacked_mod: str, mod: Mod):
+        unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
+        subclass_icons_folder = os.path.join(unpacked_mod, "Public", "Game", "GUI", "Assets", unpacked_mod_folder, "ClassIcons")
+        subclass_icons_hotbar_folder = os.path.join(subclass_icons_folder, "hotbar")
+        class_icons_folder = os.path.join(unpacked_mod, "Public", "Game", "GUI", "Assets", unpacked_mod_folder, "ClassIcons")
+        class_icons_hotbar_folder = os.path.join(class_icons_folder, "hotbar")
+        mod.subclass_icons = FileManager.get_file_names(subclass_icons_folder)
+        mod.subclass_icons_hotbar = FileManager.get_file_names(subclass_icons_hotbar_folder)
+        mod.class_icons = FileManager.get_file_names(class_icons_folder)
+        mod.class_icons_hotbar = FileManager.get_file_names(class_icons_hotbar_folder)
+
+    @staticmethod
     def combine_icons(mods: List[Mod]):
         try:
             logging.info("Combining icons...")
             class_icons_file = FileManager.find_files(Paths.TEMP_DIR, ["IUI_ClassIcons.xaml"])
             race_icons_file = FileManager.find_files(Paths.TEMP_DIR, ["IUI_RaceIcons.xaml"])
 
-           
             # for mod in mods:
             #     if mod.icons is None:
             #         continue

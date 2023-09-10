@@ -216,3 +216,7 @@ class FileManager:
                 tree.write(f)
         except Exception as e:
             logging.error(f"An error occurred while removing loose strings from {file_path}: {e}")
+
+    @staticmethod
+    def get_file_names(folder_path):
+        logging.debug(f"Getting file names from {folder_path}")
