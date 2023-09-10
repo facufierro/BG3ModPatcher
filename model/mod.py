@@ -8,50 +8,56 @@ from utils.file_manager import FileManager
 class Mod:
     def __init__(self, meta_xml_string: str = None, progressions_xml_string: str = None):
         try:
-            self.progressions: Optional[List[Progression]] = None
+            self.progressions: Optional[List[Progression]] = []
             self.icons: Optional[Dict[str, str]] = None
-            # Parsing Meta XML
-            try:
-                if meta_xml_string is not None:
-                    meta_root = etree.fromstring(meta_xml_string)
 
-                    module_info = meta_root.xpath(".//node[@id='ModuleInfo']")[0]
-                    self.author = module_info.xpath(".//attribute[@id='Author']/@value")[0]
-                    self.description = module_info.xpath(".//attribute[@id='Description']/@value")[0]
-                    self.folder = module_info.xpath(".//attribute[@id='Folder']/@value")[0]
-                    self.name = module_info.xpath(".//attribute[@id='Name']/@value")[0]
-                    self.uuid = module_info.xpath(".//attribute[@id='UUID']/@value")[0]
-                else:
-                    # Default values for meta
-                    self.author = "fierrof"
-                    self.description = "A compatibility patch for Baldur's Gate 3 mods."
-                    self.folder = "FFTCompatibilityPatch"
-                    self.name = "FFTCompatibilityPatch"
-                    self.uuid = "db6fa677-150a-4302-8aab-ce4b349372bf"
-                    self.progressions = []
-            except Exception as e:
-                logging.error(f"An error occurred while parsing meta.lsx: {e}")
-            # Parsing Progressions XML
-            try:
-                if progressions_xml_string is not None:
-                    self.progressions = []
-                    prog_root = etree.fromstring(progressions_xml_string)
-                    progression_nodes = prog_root.xpath(".//node[@id='Progression']")
-                    for node in progression_nodes:
-                        xml_string_progression = etree.tostring(node).decode()
-                        progression = Progression.load_progression_from_xml(xml_string_progression)
-                        if progression is None:
-                            # logging.warning(f"Progressions from {self.name} could not be loaded. Skipping mod...")
-                            self.progressions = None
-                            break
-                        else:
-                            self.progressions.append(progression)
+            self.load_from_meta_string(meta_xml_string)
 
-            except Exception as e:
-                logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
+            if progressions_xml_string is not None:
+                self.load_progressions_from_string(progressions_xml_string)
 
         except Exception as e:
             logging.error(f"An error occurred while creating a Mod: {e}")
+
+    def load_from_meta_string(self, meta_xml_string: str):
+        try:
+            if meta_xml_string is not None:
+                meta_root = etree.fromstring(meta_xml_string)
+                module_info = meta_root.xpath(".//node[@id='ModuleInfo']")[0]
+                self.author = module_info.xpath(".//attribute[@id='Author']/@value")[0]
+                self.description = module_info.xpath(".//attribute[@id='Description']/@value")[0]
+                self.folder = module_info.xpath(".//attribute[@id='Folder']/@value")[0]
+                self.name = module_info.xpath(".//attribute[@id='Name']/@value")[0]
+                self.uuid = module_info.xpath(".//attribute[@id='UUID']/@value")[0]
+            else:
+                # Default values for meta
+                self.author = "fierrof"
+                self.description = "A compatibility patch for Baldur's Gate 3 mods."
+                self.folder = "FFTCompatibilityPatch"
+                self.name = "FFTCompatibilityPatch"
+                self.uuid = "db6fa677-150a-4302-8aab-ce4b349372bf"
+        except Exception as e:
+            logging.error(f"An error occurred while parsing meta.lsx: {e}")
+
+    def load_progressions_from_string(self, progressions_xml_string: str):
+        # Parsing Progressions XML
+        try:
+            if progressions_xml_string is not None:
+                self.progressions = []
+                prog_root = etree.fromstring(progressions_xml_string)
+                progression_nodes = prog_root.xpath(".//node[@id='Progression']")
+                for node in progression_nodes:
+                    xml_string_progression = etree.tostring(node).decode()
+                    progression = Progression.load_progression_from_xml(xml_string_progression)
+                    if progression is None:
+                        # logging.warning(f"Progressions from {self.name} could not be loaded. Skipping mod...")
+                        self.progressions = None
+                        break
+                    else:
+                        self.progressions.append(progression)
+
+        except Exception as e:
+            logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
 
     def __str__(self):
         str_rep = (
