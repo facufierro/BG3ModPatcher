@@ -27,7 +27,7 @@ class ModManager:
         return lstMods
 
     @staticmethod
-    def unpack_mods():
+    def unpack_mods() -> List[str]:
         try:
             logging.info("Unpacking mods...")
             unpacked_mods = []
@@ -47,7 +47,7 @@ class ModManager:
             logging.error(f"An error occurred while unpacking mods: {e}")
 
     @staticmethod
-    def select_progression_mods(unpacked_mods: List[str]):
+    def select_progression_mods(unpacked_mods: List[str]) -> List[Mod]:
         try:
             mods = []
             logging.warn("Only mods with COMPATIBLE meta.lsx and Progressions.lsx file will be selected. Other mods are not supported by this tool.")
@@ -56,6 +56,8 @@ class ModManager:
             for unpacked_mod in unpacked_mods:
 
                 unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
+                if unpacked_mod_folder == "FFTCompatibilityPatch":
+                    continue
                 if unpacked_mod_folder == "ImprovedUI Assets":
                     logging.warn(f"ImprovedUI Assets mod detected. Icons will be patched.")
                     ModManager.ImprovedUI_Assets = True
@@ -87,7 +89,7 @@ class ModManager:
             pass
 
     @staticmethod
-    def combine_mods(mods: List[Mod]):
+    def combine_mods(mods: List[Mod]) -> Mod:
         patch_data = Mod()
         for mod in mods:
             logging.debug(f"Combining progressions for {mod.name}...")
@@ -107,31 +109,31 @@ class ModManager:
         return patch_data
 
     @staticmethod
-    def combine_icons(mods: List[Mod], patch_data: Mod):
+    def combine_icons(mods: List[Mod], patch_data: Mod) -> None:
         try:
             if ModManager.ImprovedUI_Assets:
                 logging.info("Combining icons...")
+                # copy the library folder from ImprovedUI Assets mod to the patch folder
+                library_path = os.path.join(Paths.TEMP_DIR,  "ImprovedUI Assets", "Public", "Game", "GUI", "Library")
+                patch_library_path = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Library")
+                FileManager.copy_folder(library_path, patch_library_path)
+                class_icons_path = os.path.join(patch_library_path, "IUI_ClassIcons.xaml")
+                logging.debug(f"Class icons path: {class_icons_path}")
+                for mod in mods:
+                    if mod.assets is None:
+                        continue
 
-                # for mod in mods:
-                #     if mod.assets is None:
-                #         continue
-                #     logging.debug(f"Copying {mod.assets} to {patch_data.assets}...")
-                #     FileManager.copy_folder(mod.assets, patch_data.assets)
-                    # icon_names = []
-                    # for icon in icon_names:
-                    #     icon_string = (
-                    #         '<DataTrigger Binding="{Binding SubclassIDString}" Value="Armorer">'
-                    #         f'<Setter Property="Source" Value="pack://application:,,,/GustavNoesisGUI;component/Assets/Artificer/ClassIcons/{icon}.png"/>'
-                    #         '</DataTrigger>'
-                    #     )
-                    #     FileManager.insert_after_last_node(`os.path.join(patch_data.assets, "..", "Library", "IUI_ClassIcons.lsx"), "<Style.Triggers>", icon_string)
+                icon_string = (
+                    'TEST'
+                )
+                FileManager.insert_after_last_node(class_icons_path, "//DataTrigger[@Binding='{Binding SubclassIDString}' and @Value='Armorer']", icon_string)
 
                 logging.info(f"Successfully combined icons for {len(mods)} mods ")
         except Exception as e:
             logging.error(f"An error occurred while combining icons: {e}")
 
     @staticmethod
-    def create_patch_folder(patch_data: Mod):
+    def create_patch_folder(patch_data: Mod) -> bool:
         try:
             logging.info("Creating patch files...")
 
@@ -147,7 +149,7 @@ class ModManager:
             logging.error(f"An error occurred while creating patch: {e}")
 
     @staticmethod
-    def pack_patch(patch_data: Mod):
+    def pack_patch(patch_data: Mod) -> bool:
         try:
             logging.info("Packing patch...")
             source_path = os.path.join(Paths.TEMP_DIR, patch_data.folder)
@@ -158,7 +160,7 @@ class ModManager:
             logging.error(f"An error occurred while packing patch: {e}")
 
     @staticmethod
-    def install_patch(patch_data: Mod):
+    def install_patch(patch_data: Mod) -> bool:
         try:
             logging.info("Installing patch...")
             modsettings_file = FileManager.find_files(Paths.GAME_DATA_DIR, ["modsettings.lsx"])
@@ -170,7 +172,7 @@ class ModManager:
             logging.error(f"An error occurred while installing patch: {e}")
 
     @staticmethod
-    def merge_progressions(existing_progression: Progression, new_progression: Progression):
+    def merge_progressions(existing_progression: Progression, new_progression: Progression) -> None:
         try:
             existing_subclass_uuids = [s.uuid for s in existing_progression.subclasses]
             new_subclasses = [s for s in new_progression.subclasses if s.uuid not in existing_subclass_uuids]
@@ -184,7 +186,7 @@ class ModManager:
             logging.error(f"An error occurred while merging progressions: {e}")
 
     @staticmethod
-    def merge_attributes(existing_progression: Progression, new_progression: Progression):
+    def merge_attributes(existing_progression: Progression, new_progression: Progression) -> None:
         try:
             if existing_progression is None or new_progression is None:
                 return existing_progression or new_progression
@@ -199,7 +201,7 @@ class ModManager:
             logging.error(f"An error occurred while merging attributes: {e}")
 
     @staticmethod
-    def remove_value_duplicates(progression: Progression):
+    def remove_value_duplicates(progression: Progression) -> None:
         try:
             attributes = ["boosts", "passives_added", "passives_removed", "selectors"]
             for attribute in attributes:
@@ -211,7 +213,7 @@ class ModManager:
             logging.error(f"An error occurred while removing value duplicates: {e}")
 
     @staticmethod
-    def remove_duplicate_spellslots(progression: Progression):
+    def remove_duplicate_spellslots(progression: Progression) -> None:
         try:
             if progression.boosts is None:
                 return
@@ -237,7 +239,7 @@ class ModManager:
             logging.error(f"An error occurred while removing duplicate spellslots: {e}")
 
     @staticmethod
-    def clean_up():
+    def clean_up() -> None:
         try:
             logging.info("Cleaning temporary files...")
             FileManager.clean_folder(Paths.TEMP_DIR)
