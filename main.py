@@ -12,7 +12,7 @@ def main():
     unpacked_mods = mod_manager.unpack_mods()
     compatible_mods = mod_manager.select_progression_mods(unpacked_mods)
     patch_data = mod_manager.combine_mods(compatible_mods)
-    mod_manager.combine_icons(unpacked_mods)
+    mod_manager.combine_icons(compatible_mods, patch_data)
     mod_manager.create_patch_folder(patch_data)
     mod_manager.pack_patch(patch_data)
     mod_manager.install_patch(patch_data)

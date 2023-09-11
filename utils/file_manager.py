@@ -68,8 +68,8 @@ class FileManager:
             logging.error(f"An error occurred while searching for target folders: {e}")
 
         return found_folders
-    # Creates a file if it doesn't exist
 
+    # Creates a file if it doesn't exist
     @staticmethod
     def create_file(path):
         directory = os.path.dirname(path)

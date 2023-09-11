@@ -58,7 +58,7 @@ class ModManager:
                 unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
                 if unpacked_mod_folder == "ImprovedUI Assets":
                     logging.warn(f"ImprovedUI Assets mod detected. Icons will be patched.")
-                    ImprovedUI_Assets = True
+                    ModManager.ImprovedUI_Assets = True
                     continue
                 logging.info(f"Analyzing {unpacked_mod_folder} mod...")
                 meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
@@ -70,11 +70,8 @@ class ModManager:
 
                     if progression_file:
                         progression_string = FileManager.xml_to_string(progression_file['Progressions.lsx'])
-                        if progression_string is None:
-                            logging.warning(f"Progressions.lsx file in mod: {unpacked_mod_folder} is not valid. Skipping mod...")
-                            continue
                         progression_string = progression_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                        mod = Mod(meta_string, progression_string)
+                        mod = Mod(unpacked_mod, meta_string, progression_string)
                         if mod.progressions is None:
                             continue
                         mods.append(mod)
@@ -94,10 +91,7 @@ class ModManager:
     def combine_mods(mods: List[Mod]):
         patch_data = Mod()
         for mod in mods:
-            logging.debug(f"Combining mod: {mod.name}")
-            if mod.progressions is None:
-                logging.warning(f"No progressions in mod: {mod.name}")
-                continue
+            logging.debug(f"Combining progressions for {mod.name}...")
 
             for new_progression in mod.progressions:
                 existing_progression = next((p for p in patch_data.progressions if p.uuid == new_progression.uuid), None)
@@ -110,36 +104,20 @@ class ModManager:
                 ModManager.remove_value_duplicates(patch_progression)
                 ModManager.remove_duplicate_spellslots(patch_progression)
 
-        logging.info(f"Successfully combined {len(mods)} mods into {patch_data.name}")
-        # logging.debug(f"Attributes of patch_data: {vars(patch_data)}")
-
+        logging.info(f"Successfully combined progressions for {len(mods)} mods into {patch_data.name}")
         return patch_data
 
     @staticmethod
-    def load_icons(unpacked_mod: str, mod: Mod):
-        unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
-        subclass_icons_folder = os.path.join(unpacked_mod, "Public", "Game", "GUI", "Assets", unpacked_mod_folder, "ClassIcons")
-        subclass_icons_hotbar_folder = os.path.join(subclass_icons_folder, "hotbar")
-        class_icons_folder = os.path.join(unpacked_mod, "Public", "Game", "GUI", "Assets", unpacked_mod_folder, "ClassIcons")
-        class_icons_hotbar_folder = os.path.join(class_icons_folder, "hotbar")
-        mod.subclass_icons = FileManager.get_file_names(subclass_icons_folder)
-        mod.subclass_icons_hotbar = FileManager.get_file_names(subclass_icons_hotbar_folder)
-        mod.class_icons = FileManager.get_file_names(class_icons_folder)
-        mod.class_icons_hotbar = FileManager.get_file_names(class_icons_hotbar_folder)
-
-    @staticmethod
-    def combine_icons(mods: List[Mod]):
+    def combine_icons(mods: List[Mod], patch_data: Mod):
         try:
-            logging.info("Combining icons...")
-            class_icons_file = FileManager.find_files(Paths.TEMP_DIR, ["IUI_ClassIcons.xaml"])
-            race_icons_file = FileManager.find_files(Paths.TEMP_DIR, ["IUI_RaceIcons.xaml"])
+            if ModManager.ImprovedUI_Assets:
+                logging.info("Combining icons...")
 
-            # for mod in mods:
-            #     if mod.icons is None:
-            #         continue
-            #     for icon in mod.icons:
-            #         icon_files.append(icon)
-            logging.info(f"Successfully combined icons for {len(mods)} mods ")
+                for mod in mods:
+                    if mod.assets is None:
+                        continue
+                    logging.debug(f"{mod.assets}")
+                logging.info(f"Successfully combined icons for {len(mods)} mods ")
         except Exception as e:
             logging.error(f"An error occurred while combining icons: {e}")
 

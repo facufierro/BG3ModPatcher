@@ -1,17 +1,21 @@
+import os
 import logging
 from lxml import etree
 from typing import List, Optional, Dict
 from model.progression import Progression
-from utils.file_manager import FileManager
 
 
 class Mod:
-    def __init__(self, meta_xml_string: str = None, progressions_xml_string: str = None):
+    def __init__(self, unpacked_mod_folder: str = None, meta_xml_string: str = None, progressions_xml_string: str = None):
         try:
             self.progressions: Optional[List[Progression]] = []
-            self.icons: Optional[Dict[str, str]] = None
+            self.unpacked_mod_folder: Optional[str] = ""
+
+            if unpacked_mod_folder is not None:
+                self.unpacked_mod_folder = unpacked_mod_folder
 
             self.load_from_meta_string(meta_xml_string)
+            # logging.debug(self.assets)
 
             if progressions_xml_string is not None:
                 self.load_progressions_from_string(progressions_xml_string)
@@ -29,6 +33,8 @@ class Mod:
                 self.folder = module_info.xpath(".//attribute[@id='Folder']/@value")[0]
                 self.name = module_info.xpath(".//attribute[@id='Name']/@value")[0]
                 self.uuid = module_info.xpath(".//attribute[@id='UUID']/@value")[0]
+                assets_path = os.path.join(self.unpacked_mod_folder, "Public", "Game", "GUI", "Assets") if self.unpacked_mod_folder else None
+                self.assets = assets_path if os.path.exists(assets_path) else None
             else:
                 # Default values for meta
                 self.author = "fierrof"
@@ -36,6 +42,7 @@ class Mod:
                 self.folder = "FFTCompatibilityPatch"
                 self.name = "FFTCompatibilityPatch"
                 self.uuid = "db6fa677-150a-4302-8aab-ce4b349372bf"
+                self.assets = os.path.join(self.unpacked_mod_folder, "Public", "Game", "GUI", "Assets")
         except Exception as e:
             logging.error(f"An error occurred while parsing meta.lsx: {e}")
 
@@ -58,12 +65,6 @@ class Mod:
 
         except Exception as e:
             logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
-
-    def load_icons(self):
-        try:
-            self.icons = FileManager.load_icons(self.folder)
-        except Exception as e:
-            logging.error(f"An error occurred while loading icons: {e}")
 
     def __str__(self):
         str_rep = (
