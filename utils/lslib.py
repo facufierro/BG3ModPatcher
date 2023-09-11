@@ -22,7 +22,7 @@ class LSLib:
                 "--destination",
                 destination_path,
                 "-l",
-                "info",
+                "off",
             ]
             subprocess.run(str, check=True)
         except Exception as e:

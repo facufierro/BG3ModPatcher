@@ -1,0 +1,1 @@
+pyinstaller --icon=resources/bg3patcher.ico --onefile bg3patcher.py 

@@ -89,7 +89,7 @@ class ModManager:
             for icon in mod.icons:
                 icon.set_icon_name(icon_names)
                 # logging.debug(f"Icon: {icon.icon_name} - {icon.icon_type}")
-            logging.info(f"Loaded {len(mod.icons)} icons for {mod.name}")
+            # logging.info(f"Loaded {len(mod.icons)} icons for {mod.name}")
         except Exception as e:
             logging.error(f"An error occurred while loading icons for {mod.name}: {e}")
 
@@ -103,10 +103,10 @@ class ModManager:
             for mod in compatible_mods:
                 if mod.progressions is None:
                     compatible_mods.remove(mod)
-
+            
             logging.info(f"Selected {len(compatible_mods)} mods for progression patching")
             for compatible_mod in compatible_mods:
-                logging.debug(f"--{compatible_mod.name}")
+                logging.info(f"--{compatible_mod.name}")
             return compatible_mods
         except Exception as e:
             logging.error(f"An error occurred while selecting patch compatible mods: {e}")
