@@ -41,8 +41,6 @@ class Mod:
                 self.folder = module_info.xpath(".//attribute[@id='Folder']/@value")[0]
                 self.name = module_info.xpath(".//attribute[@id='Name']/@value")[0]
                 self.uuid = module_info.xpath(".//attribute[@id='UUID']/@value")[0]
-                assets_path = os.path.join(self.unpacked_mod_folder, "Public", "Game", "GUI", "Assets") if self.unpacked_mod_folder else None
-                self.assets = assets_path if os.path.exists(assets_path) else None
             else:
                 # Default values for meta
                 self.author = "fierrof"
@@ -50,8 +48,7 @@ class Mod:
                 self.folder = "FFTCompatibilityPatch"
                 self.name = "FFTCompatibilityPatch"
                 self.uuid = "db6fa677-150a-4302-8aab-ce4b349372bf"
-                assets_path = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Assets")
-                self.assets = assets_path
+
         except Exception as e:
             logging.error(f"An error occurred while parsing meta.lsx: {e}")
 
