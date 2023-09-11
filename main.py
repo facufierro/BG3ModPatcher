@@ -14,7 +14,7 @@ def main():
     compatible_mods = mod_manager.select_progression_mods(mods_list)
     patch_data = mod_manager.combine_mods(compatible_mods)
     mod_manager.combine_icons(mods_list)
-    mod_manager.create_patch_folder(patch_data)
+    mod_manager.create_patch_folder(patch_data, unpacked_mods)
     # mod_manager.pack_patch(patch_data)
     # mod_manager.install_patch(patch_data)
     # if info_level == "INFO":

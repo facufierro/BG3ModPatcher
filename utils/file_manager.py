@@ -254,6 +254,9 @@ class FileManager:
     @staticmethod
     def copy_folder(src_path, dest_path):
         try:
+            if not os.path.exists(src_path):
+                logging.debug(f"Source folder {src_path} does not exist. Skipping...")
+                return
             if not os.path.exists(dest_path):
                 os.makedirs(dest_path)
 

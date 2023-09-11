@@ -135,6 +135,7 @@ class ModManager:
             if ModManager.ImprovedUI_Assets:
                 logging.warn(f"ImprovedUI Assets detected. Icons will be patched.")
                 logging.info("Combining icons...")
+
                 for mod in mods:
                     pass
                 logging.info("Successfully combined icons")
@@ -142,7 +143,7 @@ class ModManager:
             logging.error(f"An error occurred while combining icons: {e}")
 
     @staticmethod
-    def create_patch_folder(patch_data: Mod) -> bool:
+    def create_patch_folder(patch_data: Mod, unpacked_mod_folders: List[str]) -> bool:
         try:
             logging.info("Creating patch files...")
 
@@ -155,14 +156,17 @@ class ModManager:
 
             if ModManager.ImprovedUI_Assets:
 
-                improvedui_assets_folder = os.path.join(Paths.TEMP_DIR, "ImprovedUI Assets", "Public", "Game", "GUI", "Assets")
+                improvedui_library_folder = os.path.join(Paths.TEMP_DIR, "ImprovedUI Assets", "Public", "Game", "GUI", "Library")
+                patch_library_folder = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Library")
+                FileManager.copy_folder(improvedui_library_folder, patch_library_folder)
                 patch_assets_folder = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Assets")
-                FileManager.copy_folder(improvedui_assets_folder, patch_assets_folder)
-
+                for unpacked_mod_folder in unpacked_mod_folders:
+                    assets_folder = os.path.join(Paths.TEMP_DIR, unpacked_mod_folder, "Public", "Game", "GUI", "Assets")
+                    FileManager.copy_folder(assets_folder, patch_assets_folder)
             logging.info("Patch files created successfully")
             return True
         except Exception as e:
-            logging.error(f"An error occurred while creating patch: {e}")
+            logging.error(f"An error occurred while creating the patch files: {e}")
 
     @staticmethod
     def pack_patch(patch_data: Mod) -> bool:
