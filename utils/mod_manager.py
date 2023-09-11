@@ -8,6 +8,7 @@ from utils.file_manager import FileManager
 from utils.settings_manager import Paths
 from utils.lslib import LSLib
 from model.progression import Progression
+from model.icon import Icon
 
 
 class ModManager:
@@ -80,16 +81,17 @@ class ModManager:
         return mods
 
     @staticmethod
-    def load_icons(mod, unpacked_mod):
+    def load_icons(mod: Mod, unpacked_mod: str):
         try:
             icon_folder = FileManager.find_folders(unpacked_mod, ['ClassIcons'])
             icon_names = FileManager.get_file_names(icon_folder['ClassIcons'], 'DDS')
+            icon: Icon
             for icon in mod.icons:
                 icon.set_icon_name(icon_names)
                 # logging.debug(f"Icon: {icon.icon_name} - {icon.icon_type}")
             logging.info(f"Loaded {len(mod.icons)} icons for {mod.name}")
         except Exception as e:
-            logging.error(f"An error occurred while loading icons: {e}")
+            logging.error(f"An error occurred while loading icons for {mod.name}: {e}")
 
     @staticmethod
     def select_progression_mods(mod_list: List[Mod]) -> List[Mod]:
@@ -139,7 +141,7 @@ class ModManager:
                 mod: Mod
                 for mod in mods:
                     for mod_icon in mod.icons:
-                        logging.debug(mod_icon.icon_string())
+                        # logging.debug(mod_icon.icon_string())
                         # FileManager.insert_string_to_xml(patch_class_icons_file, "//DataTrigger[@Binding='{Binding SubclassIDString}']", mod_icon.icon_string(), namespace='default')
                         FileManager.insert_string_to_xml(
                             patch_class_icons_file,

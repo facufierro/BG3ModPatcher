@@ -16,11 +16,11 @@ def main():
 
     mod_manager.create_patch_folder(patch_data, unpacked_mods)
     mod_manager.combine_icons(mods_list)
-    # mod_manager.pack_patch(patch_data)
-    # mod_manager.install_patch(patch_data)
-    # if info_level == "INFO":
-    #     mod_manager.clean_up()
-    #     input("Press Enter to continue...")
+    mod_manager.pack_patch(patch_data)
+    mod_manager.install_patch(patch_data)
+    if info_level == "INFO":
+        mod_manager.clean_up()
+        input("Press Enter to continue...")
 
 
 if __name__ == '__main__':
