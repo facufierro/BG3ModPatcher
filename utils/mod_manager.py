@@ -137,7 +137,7 @@ class ModManager:
             if ModManager.ImprovedUI_Assets:
                 logging.warn(f"ImprovedUI Assets detected. Icons will be patched.")
                 logging.info("Combining icons...")
-                patch_class_icons_file = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Library", "IUI_ClassIcons.xaml")
+                patch_class_icons_file = os.path.join(Paths.TEMP_DIR, "ImprovedUI Assets", "Public", "Game", "GUI", "Library", "IUI_ClassIcons.xaml")
                 mod: Mod
                 for mod in mods:
                     for mod_icon in mod.icons:
@@ -171,15 +171,15 @@ class ModManager:
             FileManager.write_file(meta_file_path, patch_data.meta_string())
             FileManager.write_file(progressions_file_path, patch_data.progressions_string())
 
-            if ModManager.ImprovedUI_Assets:
+            # if ModManager.ImprovedUI_Assets:
 
-                improvedui_library_folder = os.path.join(Paths.TEMP_DIR, "ImprovedUI Assets", "Public", "Game", "GUI", "Library")
-                patch_library_folder = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Library")
-                FileManager.copy_folder(improvedui_library_folder, patch_library_folder)
-                patch_assets_folder = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Assets")
-                for unpacked_mod_folder in unpacked_mod_folders:
-                    assets_folder = os.path.join(Paths.TEMP_DIR, unpacked_mod_folder, "Public", "Game", "GUI", "Assets")
-                    FileManager.copy_folder(assets_folder, patch_assets_folder)
+            #     improvedui_library_folder = os.path.join(Paths.TEMP_DIR, "ImprovedUI Assets", "Public", "Game", "GUI", "Library")
+            #     patch_library_folder = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Library")
+            #     FileManager.copy_folder(improvedui_library_folder, patch_library_folder)
+            #     patch_assets_folder = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Assets")
+            #     for unpacked_mod_folder in unpacked_mod_folders:
+            #         assets_folder = os.path.join(Paths.TEMP_DIR, unpacked_mod_folder, "Public", "Game", "GUI", "Assets")
+            #         FileManager.copy_folder(assets_folder, patch_assets_folder)
             logging.info("Patch files created successfully")
             return True
         except Exception as e:
