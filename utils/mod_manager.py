@@ -21,6 +21,8 @@ class ModManager:
         try:
             for filename in os.listdir(mods_directory):
                 if filename.endswith(".pak"):
+                    if filename == "FFTCompatibilityPatch.pak":
+                        continue
                     lstMods.append(filename)
         except Exception as e:
             logging.error(f"An error occurred while listing all mods: {e}")
@@ -150,6 +152,13 @@ class ModManager:
             FileManager.create_file(progressions_file_path)
             FileManager.write_file(meta_file_path, patch_data.meta_string())
             FileManager.write_file(progressions_file_path, patch_data.progressions_string())
+
+            if ModManager.ImprovedUI_Assets:
+
+                improvedui_assets_folder = os.path.join(Paths.TEMP_DIR, "ImprovedUI Assets", "Public", "Game", "GUI", "Assets")
+                patch_assets_folder = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Assets")
+                FileManager.copy_folder(improvedui_assets_folder, patch_assets_folder)
+
             logging.info("Patch files created successfully")
             return True
         except Exception as e:
