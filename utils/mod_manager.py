@@ -135,9 +135,24 @@ class ModManager:
             if ModManager.ImprovedUI_Assets:
                 logging.warn(f"ImprovedUI Assets detected. Icons will be patched.")
                 logging.info("Combining icons...")
-
+                patch_class_icons_file = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Library", "IUI_ClassIcons.xaml")
+                mod: Mod
                 for mod in mods:
-                    pass
+                    for mod_icon in mod.icons:
+                        logging.debug(mod_icon.icon_string())
+                        # FileManager.insert_string_to_xml(patch_class_icons_file, "//DataTrigger[@Binding='{Binding SubclassIDString}']", mod_icon.icon_string(), namespace='default')
+                        FileManager.insert_string_to_xml(
+                            patch_class_icons_file,
+                            f"//DataTrigger[@Binding='{{Binding {mod_icon.icon_type}IDString}}']",
+                            mod_icon.icon_string(),
+                            namespace='default',
+                            position='first')
+                        FileManager.insert_string_to_xml(
+                            patch_class_icons_file,
+                            f"//DataTrigger[@Binding='{{Binding {mod_icon.icon_type}IDString}}']",
+                            mod_icon.icon_hotbar_string(),
+                            namespace='default',
+                            position='last')
                 logging.info("Successfully combined icons")
         except Exception as e:
             logging.error(f"An error occurred while combining icons: {e}")
@@ -184,8 +199,8 @@ class ModManager:
         try:
             logging.info("Installing patch...")
             modsettings_file = FileManager.find_files(Paths.GAME_DATA_DIR, ["modsettings.lsx"])
-            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "//node[@id='Module']", patch_data.module_string())
-            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "//node[@id='ModuleShortDesc']", patch_data.module_short_desc_string())
+            FileManager.insert_string_to_xml(modsettings_file['modsettings.lsx'], "//node[@id='Module']", patch_data.module_string())
+            FileManager.insert_string_to_xml(modsettings_file['modsettings.lsx'], "//node[@id='ModuleShortDesc']", patch_data.module_short_desc_string())
             logging.info("Patch installed successfully")
             return True
         except Exception as e:

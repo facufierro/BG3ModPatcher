@@ -169,7 +169,7 @@ class FileManager:
     # Inserts the specified data after the last node with the specified id in the specified XML file
 
     @staticmethod
-    def insert_after_last_node(xml_file_path, xpath_expr, string_to_insert, namespace=None, position='last'):
+    def insert_string_to_xml(xml_file_path, xpath_expr, string_to_insert, namespace=None, position: Literal['first', 'last'] = 'last'):
         # Parse the XML file
         tree = etree.parse(xml_file_path)
         root = tree.getroot()

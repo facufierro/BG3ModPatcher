@@ -17,7 +17,7 @@ class Icon:
     def get_icon_type(self) -> str:
         try:
             if self.class_description.parent_guid is None:
-                return "Class"
+                return ""
             else:
                 return "Subclass"
         except Exception as e:
@@ -37,12 +37,12 @@ class Icon:
 
     def icon_string(self) -> str:
         return (
-            f'<DataTrigger Binding="{{Binding IDString}}" Value="{self.class_description.name}">'
+            f'<DataTrigger Binding="{{Binding {self.icon_type}IDString}}" Value="{self.class_description.name}">'
             f'<Setter Property="Source" Value="pack://application:,,,/GustavNoesisGUI;component/Assets/{self.mod_folder}/ClassIcons/{self.icon_name}.png"/>'
             '</DataTrigger>')
 
     def icon_hotbar_string(self) -> str:
         return (
-            f'<DataTrigger Binding="{{Binding IDString}}" Value="{self.class_description.name}">'
+            f'<DataTrigger Binding="{{Binding {self.icon_type}IDString}}" Value="{self.class_description.name}">'
             f'<Setter Property="Source" Value="pack://application:,,,/GustavNoesisGUI;component/Assets/{self.mod_folder}/ClassIcons/hotbar/{self.icon_name}.png"/>'
             '</DataTrigger>')

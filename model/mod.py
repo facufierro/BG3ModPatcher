@@ -187,3 +187,8 @@ class Mod:
             '</node>\n'
         )
         return str
+
+    def icon_string(self) -> str:
+        return (
+            
+        )
