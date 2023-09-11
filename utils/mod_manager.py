@@ -75,7 +75,6 @@ class ModManager:
                         if mod.progressions is None:
                             continue
                         mods.append(mod)
-                        # logging.info(f"-- {unpacked_mod_folder} selected for patching.")
 
             logging.info(f"{len(mods)} mods selected for patching:")
             for mod in mods:
@@ -113,10 +112,20 @@ class ModManager:
             if ModManager.ImprovedUI_Assets:
                 logging.info("Combining icons...")
 
-                for mod in mods:
-                    if mod.assets is None:
-                        continue
-                    logging.debug(f"{mod.assets}")
+                # for mod in mods:
+                #     if mod.assets is None:
+                #         continue
+                #     logging.debug(f"Copying {mod.assets} to {patch_data.assets}...")
+                #     FileManager.copy_folder(mod.assets, patch_data.assets)
+                    # icon_names = []
+                    # for icon in icon_names:
+                    #     icon_string = (
+                    #         '<DataTrigger Binding="{Binding SubclassIDString}" Value="Armorer">'
+                    #         f'<Setter Property="Source" Value="pack://application:,,,/GustavNoesisGUI;component/Assets/Artificer/ClassIcons/{icon}.png"/>'
+                    #         '</DataTrigger>'
+                    #     )
+                    #     FileManager.insert_after_last_node(`os.path.join(patch_data.assets, "..", "Library", "IUI_ClassIcons.lsx"), "<Style.Triggers>", icon_string)
+
                 logging.info(f"Successfully combined icons for {len(mods)} mods ")
         except Exception as e:
             logging.error(f"An error occurred while combining icons: {e}")
@@ -153,8 +162,8 @@ class ModManager:
         try:
             logging.info("Installing patch...")
             modsettings_file = FileManager.find_files(Paths.GAME_DATA_DIR, ["modsettings.lsx"])
-            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "Module", patch_data.module_string())
-            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "ModuleShortDesc", patch_data.module_short_desc_string())
+            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "//node[@id='Module']", patch_data.module_string())
+            FileManager.insert_after_last_node(modsettings_file['modsettings.lsx'], "//node[@id='ModuleShortDesc']", patch_data.module_short_desc_string())
             logging.info("Patch installed successfully")
             return True
         except Exception as e:

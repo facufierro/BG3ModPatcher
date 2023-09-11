@@ -160,17 +160,17 @@ class FileManager:
 
     # Inserts the specified data after the last node with the specified id in the specified XML file
     @staticmethod
-    def insert_after_last_node(xml_file_path, node_id, string_to_insert):
+    def insert_after_last_node(xml_file_path, xpath_expr, string_to_insert):
         # Parse the XML file
         tree = etree.parse(xml_file_path)
         root = tree.getroot()
 
-        # Find all nodes with the specified id
-        nodes = root.xpath("//node[@id='{}']".format(node_id))
+        # Find all nodes using the XPath expression
+        nodes = root.xpath(xpath_expr)
 
-        # If no node with that id is found, return
+        # If no node matching the XPath is found, return
         if not nodes:
-            logging.debug(f"No node with id {node_id} found in {xml_file_path}")
+            logging.debug(f"No node matching {xpath_expr} found in {xml_file_path}")
             return
 
         # Parse the string to insert into an Element object
@@ -179,7 +179,7 @@ class FileManager:
         # Check if the element already exists
         uuid = new_element.xpath("//attribute[@id='UUID']/@value")
         if uuid:
-            existing_nodes = root.xpath("//node[@id='{}']/attribute[@id='UUID' and @value='{}']".format(node_id, uuid[0]))
+            existing_nodes = root.xpath("{}[attribute[@id='UUID' and @value='{}']]".format(xpath_expr, uuid[0]))
             if existing_nodes:
                 # logging.debug(f"Element with UUID {uuid[0]} already exists. Skipping...")
                 return
@@ -196,6 +196,7 @@ class FileManager:
         tree.write(xml_file_path, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
     # Converts an XML file to a string
+
     @staticmethod
     def xml_to_string(xml_file_path):
         try:
@@ -231,3 +232,19 @@ class FileManager:
     @staticmethod
     def get_file_names(folder_path: str, extension: str):
         return [f for f in os.listdir(folder_path) if f.endswith(f".{extension}")]
+
+    @staticmethod
+    def copy_folder(src_path, dest_path):
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+
+        for item in os.listdir(src_path):
+            s = os.path.join(src_path, item)
+            d = os.path.join(dest_path, item)
+
+            if os.path.isdir(s):
+                if not os.path.exists(d):
+                    os.makedirs(d)
+                FileManager.copy_folder(s, d)
+            else:
+                shutil.copy2(s, d)

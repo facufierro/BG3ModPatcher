@@ -3,13 +3,14 @@ import logging
 from lxml import etree
 from typing import List, Optional, Dict
 from model.progression import Progression
+from utils.settings_manager import Paths
 
 
 class Mod:
     def __init__(self, unpacked_mod_folder: str = None, meta_xml_string: str = None, progressions_xml_string: str = None):
         try:
             self.progressions: Optional[List[Progression]] = []
-            self.unpacked_mod_folder: Optional[str] = ""
+            self.author: Optional[str] = None
 
             if unpacked_mod_folder is not None:
                 self.unpacked_mod_folder = unpacked_mod_folder
@@ -42,7 +43,8 @@ class Mod:
                 self.folder = "FFTCompatibilityPatch"
                 self.name = "FFTCompatibilityPatch"
                 self.uuid = "db6fa677-150a-4302-8aab-ce4b349372bf"
-                self.assets = os.path.join(self.unpacked_mod_folder, "Public", "Game", "GUI", "Assets")
+                assets_path = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Assets")
+                self.assets = assets_path
         except Exception as e:
             logging.error(f"An error occurred while parsing meta.lsx: {e}")
 
