@@ -2,6 +2,7 @@
 import os
 import logging
 from typing import List
+from lxml import etree
 from model.mod import Mod
 from utils.file_manager import FileManager
 from utils.settings_manager import Paths
@@ -47,46 +48,64 @@ class ModManager:
             logging.error(f"An error occurred while unpacking mods: {e}")
 
     @staticmethod
-    def select_progression_mods(unpacked_mods: List[str]) -> List[Mod]:
-        try:
-            mods = []
-            logging.warn("Only mods with COMPATIBLE meta.lsx and Progressions.lsx file will be selected. Other mods are not supported by this tool.")
-            # logging.info("Selecting patch compatible mods...")
+    def get_mods_list(unpacked_mods: List[str]) -> List[Mod]:
+        mods = []
+        for unpacked_mod in unpacked_mods:
+            unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
+            if unpacked_mod_folder == "FFTCompatibilityPatch":
+                continue
+            if unpacked_mod_folder == "ImprovedUI Assets":
+                ModManager.ImprovedUI_Assets = True
+            meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
+            class_descriptions_file = FileManager.find_files(unpacked_mod, ['ClassDescriptions.lsx'])
+            progression_file = FileManager.find_files(unpacked_mod, ['Progressions.lsx'])
 
-            for unpacked_mod in unpacked_mods:
-
-                unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
-                if unpacked_mod_folder == "FFTCompatibilityPatch":
-                    continue
-                if unpacked_mod_folder == "ImprovedUI Assets":
-                    logging.warn(f"ImprovedUI Assets mod detected. Icons will be patched.")
-                    ModManager.ImprovedUI_Assets = True
-                    continue
-                logging.info(f"Analyzing {unpacked_mod_folder} mod...")
-                meta_file = FileManager.find_files(unpacked_mod, ['meta.lsx'])
-                progression_file = FileManager.find_files(unpacked_mod, ['Progressions.lsx'])
-
-                if meta_file:
-                    meta_string = FileManager.xml_to_string(meta_file['meta.lsx'])
-                    meta_string = meta_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+            if meta_file:
+                meta_string = FileManager.xml_to_string(meta_file['meta.lsx'])
+                meta_string = meta_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+                if class_descriptions_file:
+                    class_descriptions_string = FileManager.xml_to_string(class_descriptions_file['ClassDescriptions.lsx'])
+                    class_descriptions_string = class_descriptions_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
 
                     if progression_file:
                         progression_string = FileManager.xml_to_string(progression_file['Progressions.lsx'])
                         progression_string = progression_string.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                        mod = Mod(unpacked_mod, meta_string, progression_string)
-                        if mod.progressions is None:
-                            continue
+
+                        # Create the Mod object here, within the innermost if block
+                        mod = Mod(unpacked_mod, meta_string, class_descriptions_string, progression_string)
+                        ModManager.load_icons(mod, unpacked_mod)
                         mods.append(mod)
+        return mods
 
-            logging.info(f"{len(mods)} mods selected for patching:")
-            for mod in mods:
-                logging.info(f"--{mod.name}")
-
-            return mods
-
+    @staticmethod
+    def load_icons(mod, unpacked_mod):
+        try:
+            icon_folder = FileManager.find_folders(unpacked_mod, ['ClassIcons'])
+            icon_names = FileManager.get_file_names(icon_folder['ClassIcons'], 'DDS')
+            for icon in mod.icons:
+                icon.set_icon_name(icon_names)
+                # logging.debug(f"Icon: {icon.icon_name} - {icon.icon_type}")
+            logging.info(f"Loaded {len(mod.icons)} icons for {mod.name}")
         except Exception as e:
-            # logging.error(f"An error occurred while selecting patch compatible mods: {e}")
-            pass
+            logging.error(f"An error occurred while loading icons: {e}")
+
+    @staticmethod
+    def select_progression_mods(mod_list: List[Mod]) -> List[Mod]:
+        try:
+            logging.info("Selecting mods for patching...")
+            logging.warn("Only mods with COMPATIBLE meta.lsx and Progressions.lsx file will be selected. Other mods don't need Progression patching.")
+
+            compatible_mods = mod_list
+            for mod in compatible_mods:
+                if mod.progressions is None:
+                    compatible_mods.remove(mod)
+
+            logging.info(f"Selected {len(compatible_mods)} mods for progression patching")
+            for compatible_mod in compatible_mods:
+                logging.debug(f"--{compatible_mod.name}")
+            return compatible_mods
+        except Exception as e:
+            logging.error(f"An error occurred while selecting patch compatible mods: {e}")
 
     @staticmethod
     def combine_mods(mods: List[Mod]) -> Mod:
@@ -109,26 +128,14 @@ class ModManager:
         return patch_data
 
     @staticmethod
-    def combine_icons(mods: List[Mod], patch_data: Mod) -> None:
+    def combine_icons(mods: List[Mod]) -> None:
         try:
             if ModManager.ImprovedUI_Assets:
+                logging.warn(f"ImprovedUI Assets detected. Icons will be patched.")
                 logging.info("Combining icons...")
-                # copy the library folder from ImprovedUI Assets mod to the patch folder
-                library_path = os.path.join(Paths.TEMP_DIR,  "ImprovedUI Assets", "Public", "Game", "GUI", "Library")
-                patch_library_path = os.path.join(Paths.TEMP_DIR, "FFTCompatibilityPatch", "Public", "Game", "GUI", "Library")
-                FileManager.copy_folder(library_path, patch_library_path)
-                class_icons_path = os.path.join(patch_library_path, "IUI_ClassIcons.xaml")
-                logging.debug(f"Class icons path: {class_icons_path}")
                 for mod in mods:
-                    if mod.assets is None:
-                        continue
-
-                icon_string = (
-                    'TEST'
-                )
-                FileManager.insert_after_last_node(class_icons_path, "//DataTrigger[@Binding='{Binding SubclassIDString}' and @Value='Armorer']", icon_string)
-
-                logging.info(f"Successfully combined icons for {len(mods)} mods ")
+                    pass
+                logging.info("Successfully combined icons")
         except Exception as e:
             logging.error(f"An error occurred while combining icons: {e}")
 

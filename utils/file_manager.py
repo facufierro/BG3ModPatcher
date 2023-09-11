@@ -21,7 +21,15 @@ class FileManager:
                 logging.error(f"Failed to create directory {path}: {e}")
                 return False
 
+    @staticmethod
+    def delete_folder(path):
+        try:
+            if os.path.exists(path):
+                shutil.rmtree(path)
+        except Exception as e:
+            logging.error(f"An error occurred while deleting folder: {e}")
     # Deletes all files and folders in the specified folder
+
     @staticmethod
     def clean_folder(folder_path):
         try:
@@ -159,43 +167,49 @@ class FileManager:
         FileManager.generate_mod_file_data(file_type, obj_list, base_string_top, base_string_bottom)
 
     # Inserts the specified data after the last node with the specified id in the specified XML file
+
     @staticmethod
-    def insert_after_last_node(xml_file_path, xpath_expr, string_to_insert):
+    def insert_after_last_node(xml_file_path, xpath_expr, string_to_insert, namespace=None, position='last'):
         # Parse the XML file
         tree = etree.parse(xml_file_path)
         root = tree.getroot()
 
+        # If a namespace is provided, update the XPath expression to include it
+        if namespace:
+            xpath_expr = xpath_expr.replace('//', f"//{namespace}:")
+
         # Find all nodes using the XPath expression
-        nodes = root.xpath(xpath_expr)
+        nsmap = {namespace: root.nsmap[None]} if namespace else None
+        nodes = root.xpath(xpath_expr, namespaces=nsmap)
 
         # If no node matching the XPath is found, return
         if not nodes:
-            logging.debug(f"No node matching {xpath_expr} found in {xml_file_path}")
-            return
+            return "No node found"
 
         # Parse the string to insert into an Element object
         new_element = etree.fromstring(string_to_insert)
 
         # Check if the element already exists
-        uuid = new_element.xpath("//attribute[@id='UUID']/@value")
-        if uuid:
-            existing_nodes = root.xpath("{}[attribute[@id='UUID' and @value='{}']]".format(xpath_expr, uuid[0]))
-            if existing_nodes:
-                # logging.debug(f"Element with UUID {uuid[0]} already exists. Skipping...")
-                return
+        existing_nodes = [node for node in nodes if (
+            node.tag == new_element.tag and
+            node.attrib == new_element.attrib and
+            len(node) == len(new_element) and
+            all(c1.tag == c2.tag and c1.attrib == c2.attrib for c1, c2 in zip(node, new_element))
+        )]
 
-        # Get the last node
-        last_node = nodes[-1]
+        if existing_nodes:
+            return "Element already exists"
+
+        # Choose the target node based on the position parameter
+        target_node = nodes[0] if position == 'first' else nodes[-1]
 
         # Insert the new element after the last node
-        parent = last_node.getparent()
-        index = parent.index(last_node)
+        parent = target_node.getparent()
+        index = parent.index(target_node)
         parent.insert(index + 1, new_element)
 
         # Save the modified XML back to the file
         tree.write(xml_file_path, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-
-    # Converts an XML file to a string
 
     @staticmethod
     def xml_to_string(xml_file_path):
@@ -230,21 +244,28 @@ class FileManager:
             logging.error(f"An error occurred while removing loose strings from {file_path}: {e}")
 
     @staticmethod
-    def get_file_names(folder_path: str, extension: str):
-        return [f for f in os.listdir(folder_path) if f.endswith(f".{extension}")]
+    def get_file_names(folder_path: str, extension: str) -> List[str]:
+        try:
+            return [os.path.splitext(f)[0] for f in os.listdir(folder_path) if f.lower().endswith(f".{extension.lower()}")]
+        except Exception as e:
+            logging.error(f"An error occurred while getting file names: {e}")
+            return []
 
     @staticmethod
     def copy_folder(src_path, dest_path):
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
+        try:
+            if not os.path.exists(dest_path):
+                os.makedirs(dest_path)
 
-        for item in os.listdir(src_path):
-            s = os.path.join(src_path, item)
-            d = os.path.join(dest_path, item)
+            for item in os.listdir(src_path):
+                s = os.path.join(src_path, item)
+                d = os.path.join(dest_path, item)
 
-            if os.path.isdir(s):
-                if not os.path.exists(d):
-                    os.makedirs(d)
-                FileManager.copy_folder(s, d)
-            else:
-                shutil.copy2(s, d)
+                if os.path.isdir(s):
+                    if not os.path.exists(d):
+                        os.makedirs(d)
+                    FileManager.copy_folder(s, d)
+                else:
+                    shutil.copy2(s, d)  # This will overwrite the file if it already exists
+        except Exception as e:
+            logging.error(f"An error occurred while copying folder: {e}")

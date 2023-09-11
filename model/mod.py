@@ -3,20 +3,27 @@ import logging
 from lxml import etree
 from typing import List, Optional, Dict
 from model.progression import Progression
+from model.class_description import ClassDescription
+from model.icon import Icon
 from utils.settings_manager import Paths
 
 
 class Mod:
-    def __init__(self, unpacked_mod_folder: str = None, meta_xml_string: str = None, progressions_xml_string: str = None):
+    def __init__(self, unpacked_mod_folder: str = None, meta_xml_string: str = None, class_description_xml_string: str = None, progressions_xml_string: str = None):
         try:
             self.progressions: Optional[List[Progression]] = []
+            self.icons: Optional[List[Icon]] = []
+            self.class_descriptions: Optional[List[ClassDescription]] = []
             self.author: Optional[str] = None
 
             if unpacked_mod_folder is not None:
                 self.unpacked_mod_folder = unpacked_mod_folder
 
             self.load_from_meta_string(meta_xml_string)
-            # logging.debug(self.assets)
+
+            if class_description_xml_string is not None:
+                self.load_class_descriptions_from_string(class_description_xml_string)
+                self.load_icons()
 
             if progressions_xml_string is not None:
                 self.load_progressions_from_string(progressions_xml_string)
@@ -67,6 +74,31 @@ class Mod:
 
         except Exception as e:
             logging.error(f"An error occurred while parsing Progressions.lsx: {e}")
+
+    def load_class_descriptions_from_string(self, class_descriptions_xml_string: str):
+        # Parsing ClassDescriptions XML
+        try:
+            if class_descriptions_xml_string is not None:
+                self.class_descriptions = []
+                class_desc_root = etree.fromstring(class_descriptions_xml_string)
+                class_desc_nodes = class_desc_root.xpath(".//node[@id='ClassDescription']")
+                for node in class_desc_nodes:
+                    xml_string_class_desc = etree.tostring(node).decode()
+                    class_description = ClassDescription.load_from_xml(xml_string_class_desc)
+                    if class_description is None:
+                        logging.warning(f"ClassDescriptions from {self.name} could not be loaded. Skipping...")
+                        self.class_descriptions = None
+                        break
+                    else:
+                        self.class_descriptions.append(class_description)
+
+        except Exception as e:
+            logging.error(f"An error occurred while parsing ClassDescriptions XML: {e}")
+
+    def load_icons(self) -> List[Icon]:
+        for class_description in self.class_descriptions:
+            icon = Icon(class_description, self.folder)
+            self.icons.append(icon)
 
     def __str__(self):
         str_rep = (
