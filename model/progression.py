@@ -32,6 +32,7 @@ class Progression:
     @staticmethod
     def load_progression_from_xml(xml_string: str) -> 'Progression':
         try:
+
             root = etree.fromstring(xml_string)
 
             uuid = root.xpath(".//attribute[@id='UUID']/@value")[0]

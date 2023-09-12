@@ -23,10 +23,9 @@ class Mod:
 
             if class_description_xml_string is not None:
                 self.load_class_descriptions_from_string(class_description_xml_string)
-                self.load_icons()
+                # self.load_icons()
 
-            if progressions_xml_string is not None:
-                self.load_progressions_from_string(progressions_xml_string)
+            self.load_progressions_from_string(progressions_xml_string)
 
         except Exception as e:
             logging.error(f"An error occurred while creating a Mod: {e}")
@@ -63,7 +62,7 @@ class Mod:
                     xml_string_progression = etree.tostring(node).decode()
                     progression = Progression.load_progression_from_xml(xml_string_progression)
                     if progression is None:
-                        # logging.warning(f"Progressions from {self.name} could not be loaded. Skipping mod...")
+                        logging.warning(f"Progressions from {self.name} could not be loaded. Skipping mod...")
                         self.progressions = None
                         break
                     else:
@@ -190,5 +189,5 @@ class Mod:
 
     def icon_string(self) -> str:
         return (
-            
+
         )

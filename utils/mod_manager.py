@@ -52,6 +52,7 @@ class ModManager:
 
     @staticmethod
     def get_mods_list(unpacked_mods: List[str]) -> List[Mod]:
+        
         mods = []
         for unpacked_mod in unpacked_mods:
             unpacked_mod_folder = os.path.basename(os.path.normpath(unpacked_mod))
@@ -76,7 +77,7 @@ class ModManager:
 
                         # Create the Mod object here, within the innermost if block
                         mod = Mod(unpacked_mod, meta_string, class_descriptions_string, progression_string)
-                        ModManager.load_icons(mod, unpacked_mod)
+                        # ModManager.load_icons(mod, unpacked_mod)
                         mods.append(mod)
         return mods
 

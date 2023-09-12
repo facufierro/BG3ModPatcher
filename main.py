@@ -5,9 +5,9 @@ from utils.mod_manager import ModManager
 
 
 def main():
-    info_level = "INFO"
+    info_level = "DEBUG"
     setup_logger(info_level)
-    logging.info("Starting BG3ModPatcher v2.0.0 by fierrof")
+    logging.info("Starting BG3ModPatcher v2.0.1 by fierrof")
     mod_manager = ModManager()
     unpacked_mods = mod_manager.unpack_mods()
     mods_list = mod_manager.get_mods_list(unpacked_mods)
